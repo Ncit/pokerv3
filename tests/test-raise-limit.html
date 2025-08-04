@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game - Raise Limit Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .test-info h2 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        .test-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-info li {
+            margin: 5px 0;
+        }
+        .game-frame {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            background-color: #000;
+        }
+        .instructions {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        .status {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-info">
+            <h2>🎰 Three-Raise Limit Test</h2>
+            <p>This test verifies that the poker game enforces a three-raise limit per betting round to prevent infinite loops.</p>
+            
+            <h3>Test Objectives:</h3>
+            <ul>
+                <li>✅ Verify that only 3 raises are allowed per betting round</li>
+                <li>✅ Confirm raise button is disabled after 3 raises</li>
+                <li>✅ Test that raise counter displays correctly</li>
+                <li>✅ Ensure raise limit resets for each new betting round</li>
+                <li>✅ Verify all-in actions don't count against raise limit when they don't increase the bet</li>
+            </ul>
+            
+            <h3>Expected Behavior:</h3>
+            <ul>
+                <li>Players can only raise up to 3 times per betting round</li>
+                <li>After 3 raises, only call/check/fold actions are allowed</li>
+                <li>Raise counter shows "Raises: X/3" during active betting</li>
+                <li>Raise limit resets when moving to flop, turn, river phases</li>
+                <li>All-in actions that don't increase the current bet don't count as raises</li>
+            </ul>
+        </div>
+
+        <iframe src="index.html" class="game-frame" id="gameFrame"></iframe>
+
+        <div class="instructions">
+            <h3>🧪 Test Instructions:</h3>
+            <ol>
+                <li><strong>Start the server:</strong> Run <code>cd pokerv2/server && npm run dev</code></li>
+                <li><strong>Open this page</strong> in multiple browser tabs/windows to simulate multiple players</li>
+                <li><strong>Join the game</strong> with different player names in each tab</li>
+                <li><strong>Get ready</strong> in all tabs and start the game</li>
+                <li><strong>Test raise limit:</strong> Try to raise more than 3 times in a single betting round</li>
+                <li><strong>Verify UI:</strong> Check that raise button becomes disabled and counter shows "Raises: 3/3"</li>
+                <li><strong>Test phase reset:</strong> Complete the hand and verify raise limit resets for new betting rounds</li>
+            </ol>
+        </div>
+
+        <div class="status">
+            <strong>Test Status:</strong> Ready to test three-raise limit functionality
+        </div>
+    </div>
+
+    <script>
+        // Test status updates
+        const statusElement = document.querySelector('.status');
+        
+        // Listen for messages from the game iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'gameStatus') {
+                statusElement.innerHTML = `<strong>Test Status:</strong> ${event.data.message}`;
+            }
+        });
+
+        // Update status when page loads
+        statusElement.innerHTML = '<strong>Test Status:</strong> Page loaded - ready to test raise limit functionality';
+    </script>
+</body>
+</html> 

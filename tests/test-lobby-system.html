@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #040218;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .test-info {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        .status {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .status.lobby {
+            border-color: #00ff00;
+            background-color: #1a2a1a;
+        }
+        .status.playing {
+            border-color: #ffaa00;
+            background-color: #2a1a1a;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .test-button.ready {
+            background-color: #00ff00;
+            color: black;
+        }
+        .test-button.not-ready {
+            background-color: #ff0000;
+        }
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .player-card {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 150px;
+        }
+        .player-card.ready {
+            border-color: #00ff00;
+            background-color: #1a2a1a;
+        }
+        .log {
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎰 Lobby System Test</h1>
+    
+    <div class="test-info">
+        <h2>Game Status</h2>
+        <div id="game-status" class="status">
+            <p>🔴 Server: Disconnected</p>
+            <p>📊 Game State: Unknown</p>
+            <p>👥 Players: 0/6</p>
+            <p>✅ Ready: 0/0</p>
+        </div>
+    </div>
+
+    <div class="test-info">
+        <h2>Test Controls</h2>
+        <button class="test-button" onclick="connectToServer()">🔌 Connect to Server</button>
+        <button class="test-button" onclick="joinRoom()" id="join-btn" disabled>👤 Join Room</button>
+        <button class="test-button" onclick="toggleReady()" id="ready-btn" disabled>✅ Ready</button>
+        <button class="test-button" onclick="startGame()" id="start-btn" disabled>🎮 Start Game</button>
+        <button class="test-button" onclick="leaveRoom()" id="leave-btn" disabled>🚪 Leave Room</button>
+        <button class="test-button" onclick="openGame()">🎮 Open Game</button>
+    </div>
+
+    <div class="test-info">
+        <h2>Room Players</h2>
+        <div id="player-list" class="player-list">
+            <p>No players in room</p>
+        </div>
+    </div>
+
+    <div class="test-info">
+        <h2>Event Log</h2>
+        <div id="event-log" class="log"></div>
+        <button class="test-button" onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        let isConnected = false;
+        let isInRoom = false;
+        let players = [];
+        let myPlayerId = null;
+        let gameState = null;
+
+        function log(message) {
+            const logElement = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateGameStatus() {
+            const statusElement = document.getElementById('game-status');
+            if (!isConnected) {
+                statusElement.className = 'status';
+                statusElement.innerHTML = `
+                    <p>🔴 Server: Disconnected</p>
+                    <p>📊 Game State: Unknown</p>
+                    <p>👥 Players: 0/6</p>
+                    <p>✅ Ready: 0/0</p>
+                `;
+                return;
+            }
+
+            if (gameState) {
+                const statusClass = gameState.status === 'lobby' ? 'lobby' : 'playing';
+                statusElement.className = `status ${statusClass}`;
+                statusElement.innerHTML = `
+                    <p>🟢 Server: Connected</p>
+                    <p>📊 Game State: ${gameState.status.toUpperCase()}</p>
+                    <p>👥 Players: ${gameState.totalPlayers || players.length}/6</p>
+                    <p>✅ Ready: ${gameState.readyCount || 0}/${gameState.totalPlayers || 0}</p>
+                    <p>🎯 All Ready: ${gameState.allPlayersReady ? 'Yes' : 'No'}</p>
+                `;
+            } else {
+                statusElement.className = 'status';
+                statusElement.innerHTML = `
+                    <p>🟢 Server: Connected</p>
+                    <p>📊 Game State: Not in room</p>
+                    <p>👥 Players: 0/6</p>
+                    <p>✅ Ready: 0/0</p>
+                `;
+            }
+        }
+
+        function updatePlayerList() {
+            const playerListElement = document.getElementById('player-list');
+            if (players.length === 0) {
+                playerListElement.innerHTML = '<p>No players in room</p>';
+                return;
+            }
+
+            playerListElement.innerHTML = players.map(player => `
+                <div class="player-card ${player.ready ? 'ready' : ''}">
+                    <h4>${player.name}</h4>
+                    <p>ID: ${player.id}</p>
+                    <p>Bank: $${player.bank}</p>
+                    <p>${player.ready ? '✅ Ready' : '❌ Not Ready'}</p>
+                    <p>${player.id === myPlayerId ? '👤 (You)' : ''}</p>
+                </div>
+            `).join('');
+        }
+
+        function updateButtons() {
+            const joinBtn = document.getElementById('join-btn');
+            const readyBtn = document.getElementById('ready-btn');
+            const startBtn = document.getElementById('start-btn');
+            const leaveBtn = document.getElementById('leave-btn');
+
+            joinBtn.disabled = !isConnected || isInRoom;
+            readyBtn.disabled = !isConnected || !isInRoom;
+            startBtn.disabled = !isConnected || !isInRoom || !gameState?.allPlayersReady;
+            leaveBtn.disabled = !isConnected || !isInRoom;
+
+            // Update ready button appearance
+            if (isInRoom && myPlayerId) {
+                const myPlayer = players.find(p => p.id === myPlayerId);
+                if (myPlayer) {
+                    readyBtn.textContent = myPlayer.ready ? '❌ Not Ready' : '✅ Ready';
+                    readyBtn.className = myPlayer.ready ? 'test-button not-ready' : 'test-button ready';
+                }
+            }
+        }
+
+        function connectToServer() {
+            if (socket) {
+                socket.disconnect();
+            }
+
+            log('Connecting to server...');
+            socket = io('http://localhost:3000');
+
+            socket.on('connect', () => {
+                isConnected = true;
+                log('✅ Connected to server');
+                updateGameStatus();
+                updateButtons();
+            });
+
+            socket.on('disconnect', () => {
+                isConnected = false;
+                isInRoom = false;
+                players = [];
+                myPlayerId = null;
+                gameState = null;
+                log('❌ Disconnected from server');
+                updateGameStatus();
+                updatePlayerList();
+                updateButtons();
+            });
+
+            socket.on('gameJoined', (data) => {
+                isInRoom = true;
+                myPlayerId = data.playerId;
+                players = data.players;
+                gameState = data.gameState;
+                log(`✅ Joined room: ${data.gameId}`);
+                log(`👤 Your player ID: ${data.playerId}`);
+                log(`📊 Game status: ${data.gameState.status}`);
+                updateGameStatus();
+                updatePlayerList();
+                updateButtons();
+            });
+
+            socket.on('playerJoined', (data) => {
+                const newPlayer = data.player;
+                const existingIndex = players.findIndex(p => p.id === newPlayer.id);
+                if (existingIndex >= 0) {
+                    players[existingIndex] = newPlayer;
+                } else {
+                    players.push(newPlayer);
+                }
+                log(`👤 Player joined: ${newPlayer.name} (ID: ${newPlayer.id})`);
+                updateGameStatus();
+                updatePlayerList();
+            });
+
+            socket.on('playerLeft', (data) => {
+                players = players.filter(p => p.id !== data.playerId);
+                log(`👋 Player left: ${data.playerName} (ID: ${data.playerId})`);
+                updateGameStatus();
+                updatePlayerList();
+            });
+
+            socket.on('gameStateUpdate', (data) => {
+                gameState = data.gameState;
+                players = data.gameState.players;
+                
+                if (data.gameStarted) {
+                    log(`🎮 Game started!`);
+                } else if (data.readyUpdate) {
+                    log(`✅ Ready update: ${data.readyUpdate.playerId} is ${data.readyUpdate.ready ? 'ready' : 'not ready'} (${data.readyUpdate.readyCount}/${data.readyUpdate.totalPlayers})`);
+                } else if (data.newHand) {
+                    log(`🃏 New hand started`);
+                } else {
+                    log(`🔄 Game state updated: ${data.gameState.phase} phase`);
+                }
+                
+                updateGameStatus();
+                updatePlayerList();
+                updateButtons();
+            });
+
+            socket.on('error', (data) => {
+                log(`❌ Error: ${data.message}`);
+            });
+        }
+
+        function joinRoom() {
+            if (!socket || !isConnected) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            const playerData = {
+                name: `TestPlayer${Math.floor(Math.random() * 1000)}`,
+                avatarUrl: 'https://gravatar.com/avatar/default?s=400&d=robohash&r=x',
+                bank: 1000,
+                vk_user_id: Math.floor(Math.random() * 10000)
+            };
+
+            log(`👤 Joining room as: ${playerData.name}`);
+            socket.emit('joinGame', playerData);
+        }
+
+        function toggleReady() {
+            if (!socket || !isConnected || !isInRoom) {
+                log('❌ Not in room');
+                return;
+            }
+
+            const myPlayer = players.find(p => p.id === myPlayerId);
+            if (myPlayer) {
+                const newReadyState = !myPlayer.ready;
+                log(`🎯 Setting ready status: ${newReadyState}`);
+                socket.emit('setReady', newReadyState);
+            }
+        }
+
+        function startGame() {
+            if (!socket || !isConnected || !isInRoom) {
+                log('❌ Not in room');
+                return;
+            }
+
+            if (!gameState?.allPlayersReady) {
+                log('❌ Not all players are ready');
+                return;
+            }
+
+            log('🎮 Starting game...');
+            socket.emit('startGame');
+        }
+
+        function leaveRoom() {
+            if (!socket || !isConnected) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            log('🚪 Leaving room...');
+            socket.disconnect();
+        }
+
+        function openGame() {
+            // Set debug mode and open the game
+            window.isDebug = true;
+            window.open('./index.html', '_blank', 'width=1280,height=720');
+            log('🎮 Opening game in new window');
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '';
+        }
+
+        // Initialize
+        updateGameStatus();
+        updateButtons();
+        log('🚀 Lobby System Test initialized');
+        log('Click "Connect to Server" to start testing');
+    </script>
+</body>
+</html> 

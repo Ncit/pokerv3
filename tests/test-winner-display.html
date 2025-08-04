@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winner Display Test - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .feature-details {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        .instructions {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+        }
+        .expected-results {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+        .code-block {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #f39c12;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .test-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .test-link {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .test-link:hover {
+            background: #2980b9;
+        }
+        .server-status {
+            background: #2c2c2c;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #9b59b6;
+        }
+        .winner-features {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #8e44ad;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Winner Display Test</h1>
+            <h2>Multiplayer Poker - Winner Display Functionality</h2>
+            <p>Testing winner display like in AIBotScene for multiplayer games</p>
+        </div>
+
+        <div class="server-status">
+            <h3>🌐 Server Status</h3>
+            <p><strong>Server URL:</strong> <span class="highlight">http://localhost:3000</span></p>
+            <p><strong>Status:</strong> <span id="serverStatus" class="warning">Checking...</span></p>
+            <button onclick="checkServerStatus()">Check Server Status</button>
+        </div>
+
+        <div class="winner-features">
+            <h3>🏆 Winner Display Features</h3>
+            <ol>
+                <li><strong>Server-Side Hand Evaluation:</strong>
+                    <ul>
+                        <li>Evaluates all active players' hands using HandEvaluator</li>
+                        <li>Determines winner(s) based on hand strength</li>
+                        <li>Distributes pot among winners</li>
+                        <li>Stores showdown results for client communication</li>
+                    </ul>
+                </li>
+                <li><strong>Client-Side Winner Display:</strong>
+                    <ul>
+                        <li>Displays winner name(s) and hand description</li>
+                        <li>Shows hand rankings in console</li>
+                        <li>Highlights winning players' cards with golden tint</li>
+                        <li>Shows "Next Round" button after showdown</li>
+                    </ul>
+                </li>
+                <li><strong>UI Integration:</strong>
+                    <ul>
+                        <li>Updates hand rank display with winner information</li>
+                        <li>Clears highlights when starting new hand</li>
+                        <li>Proper phase transition handling</li>
+                        <li>Console logging for debugging</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-details">
+            <h3>🔧 Implementation Details</h3>
+            
+            <h4>1. Server-Side Showdown Logic:</h4>
+            <div class="code-block">
+// Enhanced showdown() method
+showdown() {
+    console.log('PokerGame: Starting showdown - evaluating hands');
+    
+    // Evaluate all active players' hands
+    const playerHands = activePlayers.map(player => {
+        const handEvaluation = this.handEvaluator.evaluateHand(
+            player.hand, 
+            this.communityCards
+        );
+        return { player, hand: handEvaluation };
+    });
+    
+    // Find winners and distribute pot
+    let winners = [playerHands[0]];
+    // ... winner determination logic
+    
+    // Store showdown results for client
+    this.showdownResults = {
+        winners: winners.map(({ player }) => player.id),
+        winnerNames: winners.map(({ player }) => player.name),
+        handDescription: winners[0].hand.rankName,
+        playerHands: playerHands.map(({ player, hand }) => ({
+            playerId: player.id,
+            playerName: player.name,
+            handRank: hand.rankName,
+            handScore: hand.score
+        }))
+    };
+}
+            </div>
+
+            <h4>2. Client-Side Winner Handling:</h4>
+            <div class="code-block">
+// Handle showdown results in FastGameScene
+handleShowdownResults(showdownResults) {
+    // Display winner information
+    const winnerNames = showdownResults.winnerNames.join(', ');
+    const handDescription = showdownResults.handDescription;
+    
+    this.handRank.setText(`Winner: ${winnerNames} (${handDescription})`);
+    
+    // Show hand rankings in console
+    this.showHandRankings(showdownResults.playerHands);
+    
+    // Highlight winning players' cards
+    this.highlightWinningCards(showdownResults.winners);
+    
+    // Show Next Round button
+    this.nextRoundButton.setVisible(true);
+    this.nextRoundButtonText.setVisible(true);
+}
+
+// Highlight winning cards with golden tint
+highlightWinningCards(winnerIds) {
+    winnerIds.forEach(winnerId => {
+        const elements = this.playerElements.get(winnerId);
+        if (elements && elements.playerNumber) {
+            for (let cardIndex = 0; cardIndex < 2; cardIndex++) {
+                const cardData = this.cardManager.getCard(elements.playerNumber, cardIndex);
+                if (cardData && cardData.sprite) {
+                    cardData.sprite.setTint(0xFFD700); // Golden tint
+                }
+            }
+        }
+    });
+}
+            </div>
+
+            <h4>3. Game State Integration:</h4>
+            <div class="code-block">
+// Include showdown results in game state
+getPublicState() {
+    return {
+        // ... other properties
+        showdownResults: this.showdownResults
+    };
+}
+
+// Handle showdown results in client
+if (this.gameState.phase === 'showdown' && this.gameState.showdownResults) {
+    this.handleShowdownResults(this.gameState.showdownResults);
+}
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Test Instructions</h3>
+            <ol>
+                <li><strong>Start the server:</strong>
+                    <div class="code-block">cd pokerv2/server && npm run dev</div>
+                </li>
+                <li><strong>Open multiple test pages:</strong> Use the links below to open 3 different browser windows/tabs</li>
+                <li><strong>Join the game:</strong> All players will automatically join the main room</li>
+                <li><strong>Set all players ready:</strong> Click "ГОТОВ" for each player</li>
+                <li><strong>Start the game:</strong> Click "НАЧАТЬ ИГРУ" when all players are ready</li>
+                <li><strong>Test Scenario 1 - Complete Hand to Showdown:</strong>
+                    <ul>
+                        <li>Preflop: All players call (no raises)</li>
+                        <li>Flop: All players check</li>
+                        <li>Turn: All players check</li>
+                        <li>River: All players check</li>
+                        <li><strong>Expected:</strong> Game should transition to showdown, display winner, highlight winning cards</li>
+                    </ul>
+                </li>
+                <li><strong>Test Scenario 2 - All-In Showdown:</strong>
+                    <ul>
+                        <li>Have one player go all-in</li>
+                        <li>Other players call the all-in</li>
+                        <li>Complete the hand to showdown</li>
+                        <li><strong>Expected:</strong> Winner should be determined and displayed</li>
+                    </ul>
+                </li>
+                <li><strong>Test Scenario 3 - Multiple Winners:</strong>
+                    <ul>
+                        <li>Create a scenario where multiple players have the same hand strength</li>
+                        <li>Complete to showdown</li>
+                        <li><strong>Expected:</strong> All winners should be displayed and pot split</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="expected-results">
+            <h3>✅ Expected Results</h3>
+            
+            <h4>Winner Display:</h4>
+            <ul>
+                <li><span class="success">✓</span> Winner name(s) displayed in hand rank area</li>
+                <li><span class="success">✓</span> Hand description shown (e.g., "Winner: Никита (Pair of Kings)")</li>
+                <li><span class="success">✓</span> Winning players' cards highlighted with golden tint</li>
+                <li><span class="success">✓</span> "СЛЕДУЮЩИЙ РАУНД" button visible</li>
+            </ul>
+
+            <h4>Console Information:</h4>
+            <ul>
+                <li><span class="success">✓</span> Hand rankings displayed in console</li>
+                <li><span class="success">✓</span> Winner determination logged</li>
+                <li><span class="success">✓</span> Pot distribution logged</li>
+                <li><span class="success">✓</span> Showdown results processing logged</li>
+            </ul>
+
+            <h4>Server Logs:</h4>
+            <ul>
+                <li><span class="success">✓</span> Hand evaluation for each player</li>
+                <li><span class="success">✓</span> Winner determination process</li>
+                <li><span class="success">✓</span> Pot distribution to winners</li>
+                <li><span class="success">✓</span> Showdown results stored and sent to clients</li>
+            </ul>
+
+            <h4>Console Logs to Look For:</h4>
+            <div class="code-block">
+// Server side:
+PokerGame: Starting showdown - evaluating hands
+PokerGame: Никита hand evaluation: {rankName: 'Pair of Kings', score: 1300}
+PokerGame: Анна hand evaluation: {rankName: 'High Card', score: 500}
+PokerGame: Михаил hand evaluation: {rankName: 'High Card', score: 400}
+PokerGame: Никита wins 150 chips
+PokerGame: Showdown complete: {winners: ['player-id'], winnerNames: ['Никита'], handDescription: 'Pair of Kings'}
+
+// Client side:
+FastGameScene: Handling showdown results: {winners: ['player-id'], winnerNames: ['Никита'], handDescription: 'Pair of Kings'}
+FastGameScene: Hand Rankings:
+🥇 Никита: Pair of Kings
+🥈 Анна: High Card
+🥉 Михаил: High Card
+FastGameScene: Showdown results displayed
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Pages</h3>
+            <div class="test-links">
+                <a href="../index.html?debug=true&player=1" class="test-link" target="_blank">Player 1 (Никита)</a>
+                <a href="../index.html?debug=true&player=2" class="test-link" target="_blank">Player 2 (Анна)</a>
+                <a href="../index.html?debug=true&player=3" class="test-link" target="_blank">Player 3 (Михаил)</a>
+            </div>
+            
+            <h4>Alternative Test Pages:</h4>
+            <div class="test-links">
+                <a href="test-final-fixes.html" class="test-link" target="_blank">Final Fixes Test</a>
+                <a href="test-comprehensive-fix.html" class="test-link" target="_blank">Comprehensive Fix Test</a>
+                <a href="test-infinite-loop-fix-v2.html" class="test-link" target="_blank">Infinite Loop Fix Test v2</a>
+                <a href="test-three-players-allin.html" class="test-link" target="_blank">Three Players All-In Test</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Debug Information</h3>
+            <p>Open browser developer tools (F12) and check the console for detailed logs:</p>
+            <ul>
+                <li><strong>Server logs:</strong> Look for hand evaluation and winner determination messages</li>
+                <li><strong>Client logs:</strong> Check for showdown results processing and UI updates</li>
+                <li><strong>Network logs:</strong> Monitor WebSocket communication for showdown data</li>
+                <li><strong>UI changes:</strong> Observe winner display and card highlighting</li>
+            </ul>
+            
+            <h4>Key Features to Verify:</h4>
+            <ul>
+                <li><strong>Winner Display:</strong> Check if winner name and hand description appear in the hand rank area</li>
+                <li><strong>Card Highlighting:</strong> Verify that winning players' cards have golden tint</li>
+                <li><strong>Hand Rankings:</strong> Check console for complete hand rankings</li>
+                <li><strong>Next Round Button:</strong> Ensure it appears after showdown</li>
+                <li><strong>New Hand Reset:</strong> Verify highlights clear when starting new hand</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🚨 Troubleshooting</h3>
+            <ul>
+                <li><strong>No winner displayed:</strong> Check if showdown results are being sent from server</li>
+                <li><strong>Cards not highlighted:</strong> Verify card manager methods are working</li>
+                <li><strong>Hand rankings not shown:</strong> Check console for hand evaluation logs</li>
+                <li><strong>Next Round button not visible:</strong> Ensure showdown phase is properly detected</li>
+                <li><strong>Highlights not clearing:</strong> Check if clearCardHighlights() is called on new hand</li>
+                <li><strong>Server errors:</strong> Look for hand evaluation errors in server logs</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkServerStatus() {
+            const statusElement = document.getElementById('serverStatus');
+            statusElement.textContent = 'Checking...';
+            statusElement.className = 'warning';
+            
+            fetch('http://localhost:3000/health', { method: 'GET' })
+                .then(response => {
+                    if (response.ok) {
+                        statusElement.textContent = 'Online';
+                        statusElement.className = 'success';
+                    } else {
+                        statusElement.textContent = 'Error: ' + response.status;
+                        statusElement.className = 'error';
+                    }
+                })
+                .catch(error => {
+                    statusElement.textContent = 'Offline';
+                    statusElement.className = 'error';
+                });
+        }
+
+        // Check server status on page load
+        window.addEventListener('load', checkServerStatus);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All-In Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .game-info {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 All-In Fix Test</h1>
+        <p>This page tests if the all-in functionality is working correctly after the fix.</p>
+        
+        <div id="status" class="status info">Initializing...</div>
+        
+        <div>
+            <button id="connectBtn" onclick="connectToServer()">Connect to Server</button>
+            <button id="joinBtn" onclick="joinGame()" disabled>Join Game</button>
+            <button id="disconnectBtn" onclick="disconnectFromServer()" disabled>Disconnect</button>
+        </div>
+        
+        <div>
+            <button id="testAllInBtn" onclick="testAllIn()" disabled>Test All-In Action</button>
+            <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="game-info">
+            <h3>Game Information:</h3>
+            <div id="gameInfo">Not connected</div>
+        </div>
+        
+        <h3>Event Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // Mock window.appData for testing
+        window.appData = {
+            first_name: 'Test Player',
+            userAvatar: 'https://gravatar.com/avatar/test?s=400&d=robohash&r=x',
+            vk_user_id: 12345
+        };
+        
+        // Mock window.isDebug
+        window.isDebug = true;
+        
+        let networkManager = null;
+        let isConnected = false;
+        let gameState = null;
+        let myPlayer = null;
+        
+        // Import the NetworkManager
+        import('./client/src/managers/NetworkManager.js').then(({ NetworkManager }) => {
+            networkManager = new NetworkManager();
+            updateStatus('NetworkManager loaded successfully', 'success');
+            document.getElementById('connectBtn').disabled = false;
+        }).catch(error => {
+            updateStatus('Failed to load NetworkManager: ' + error.message, 'error');
+            log('Error loading NetworkManager:', error);
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            log(`[STATUS] ${message}`);
+        }
+        
+        function updateGameInfo() {
+            const gameInfoDiv = document.getElementById('gameInfo');
+            if (!gameState) {
+                gameInfoDiv.innerHTML = 'Not connected';
+                return;
+            }
+            
+            let info = `
+                <strong>Game Status:</strong> ${gameState.status}<br>
+                <strong>Phase:</strong> ${gameState.phase}<br>
+                <strong>Current Bet:</strong> $${gameState.currentBet}<br>
+                <strong>Pot:</strong> $${gameState.pot}<br>
+                <strong>Players:</strong> ${gameState.players ? gameState.players.length : 0}<br>
+            `;
+            
+            if (myPlayer) {
+                info += `
+                    <strong>My Bank:</strong> $${myPlayer.bank}<br>
+                    <strong>My Current Bet:</strong> $${myPlayer.currentBet}<br>
+                    <strong>My Turn:</strong> ${networkManager.isMyTurn() ? 'Yes' : 'No'}<br>
+                `;
+            }
+            
+            gameInfoDiv.innerHTML = info;
+        }
+        
+        function log(...args) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] ${args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ')}`;
+            logDiv.innerHTML += message + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        window.connectToServer = async function() {
+            if (!networkManager) {
+                updateStatus('NetworkManager not loaded', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('Connecting to server...', 'info');
+                document.getElementById('connectBtn').disabled = true;
+                
+                await networkManager.connect();
+                isConnected = true;
+                
+                updateStatus('Connected to server successfully', 'success');
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = false;
+                
+                // Set up event listeners
+                networkManager.on('gameJoined', (data) => {
+                    log('✅ Game joined event received:', data);
+                    gameState = data.gameState;
+                    myPlayer = data.players.find(p => p.id === data.playerId);
+                    updateGameInfo();
+                });
+                
+                networkManager.on('gameStateChanged', (data) => {
+                    log('✅ Game state changed event received:', data);
+                    gameState = data.gameState;
+                    myPlayer = networkManager.getMyPlayer();
+                    updateGameInfo();
+                    
+                    if (data.lastAction) {
+                        log('🎯 Last action:', data.lastAction);
+                    }
+                });
+                
+                networkManager.on('playerJoined', (data) => {
+                    log('✅ Player joined event received:', data);
+                });
+                
+                networkManager.on('playerLeft', (data) => {
+                    log('✅ Player left event received:', data);
+                });
+                
+                networkManager.on('networkError', (data) => {
+                    log('❌ Network error event received:', data);
+                    updateStatus('Network error: ' + data.message, 'error');
+                });
+                
+                networkManager.on('disconnected', (data) => {
+                    log('✅ Disconnected event received:', data);
+                    updateStatus('Disconnected from server', 'info');
+                    isConnected = false;
+                    gameState = null;
+                    myPlayer = null;
+                    document.getElementById('joinBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('testAllInBtn').disabled = true;
+                    document.getElementById('connectBtn').disabled = false;
+                    updateGameInfo();
+                });
+                
+            } catch (error) {
+                updateStatus('Connection failed: ' + error.message, 'error');
+                log('Connection error:', error);
+                document.getElementById('connectBtn').disabled = false;
+            }
+        };
+        
+        window.joinGame = function() {
+            if (!networkManager || !isConnected) {
+                updateStatus('Not connected to server', 'error');
+                return;
+            }
+            
+            try {
+                const playerData = {
+                    name: window.appData.first_name,
+                    avatarUrl: window.appData.userAvatar,
+                    bank: 1000,
+                    vk_user_id: window.appData.vk_user_id
+                };
+                
+                log('Joining game with player data:', playerData);
+                networkManager.joinGame(playerData);
+                updateStatus('Joining game...', 'info');
+                
+            } catch (error) {
+                updateStatus('Failed to join game: ' + error.message, 'error');
+                log('Join game error:', error);
+            }
+        };
+        
+        window.disconnectFromServer = function() {
+            if (!networkManager) {
+                updateStatus('NetworkManager not loaded', 'error');
+                return;
+            }
+            
+            try {
+                networkManager.disconnect();
+                isConnected = false;
+                gameState = null;
+                myPlayer = null;
+                updateStatus('Disconnected from server', 'info');
+                document.getElementById('joinBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('testAllInBtn').disabled = true;
+                document.getElementById('connectBtn').disabled = false;
+                updateGameInfo();
+                
+            } catch (error) {
+                updateStatus('Disconnect error: ' + error.message, 'error');
+                log('Disconnect error:', error);
+            }
+        };
+        
+        window.testAllIn = function() {
+            if (!networkManager || !isConnected) {
+                updateStatus('Not connected to server', 'error');
+                return;
+            }
+            
+            if (!gameState || gameState.status !== 'playing') {
+                updateStatus('Game is not in playing state', 'error');
+                return;
+            }
+            
+            if (!networkManager.isMyTurn()) {
+                updateStatus('Not your turn', 'error');
+                return;
+            }
+            
+            if (!myPlayer) {
+                updateStatus('Player information not available', 'error');
+                return;
+            }
+            
+            try {
+                log('🧪 Testing all-in action...');
+                log('Current game state:', {
+                    currentBet: gameState.currentBet,
+                    myBank: myPlayer.bank,
+                    myCurrentBet: myPlayer.currentBet,
+                    isMyTurn: networkManager.isMyTurn()
+                });
+                
+                // Send all-in action
+                networkManager.sendPokerAction('allIn', myPlayer.bank);
+                updateStatus('All-in action sent successfully', 'success');
+                
+            } catch (error) {
+                updateStatus('Failed to send all-in action: ' + error.message, 'error');
+                log('All-in error:', error);
+            }
+        };
+        
+        // Enable test button when game is in playing state
+        function checkTestButtonState() {
+            const testBtn = document.getElementById('testAllInBtn');
+            if (gameState && gameState.status === 'playing' && networkManager && networkManager.isMyTurn()) {
+                testBtn.disabled = false;
+            } else {
+                testBtn.disabled = true;
+            }
+        }
+        
+        // Check button state periodically
+        setInterval(checkTestButtonState, 1000);
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (networkManager) {
+                networkManager.cleanup();
+            }
+        });
+    </script>
+</body>
+</html> 

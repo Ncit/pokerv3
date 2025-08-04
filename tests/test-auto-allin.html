@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto All-In Test - Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .feature-list {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .feature-list h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .code-example {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 3px solid #e74c3c;
+        }
+        .scenario {
+            background: #2d5a2d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .scenario h4 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+        .button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        .warning {
+            background: #8b4513;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffa500;
+        }
+        .warning h4 {
+            color: #ffa500;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 Auto All-In Feature Test</h1>
+            <p>Testing the new feature that automatically converts insufficient raises to all-in actions</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Auto All-In Logic</h2>
+            <p>When a player tries to raise but doesn't have enough money for the minimum raise amount, the system now automatically converts the action to an all-in instead of showing an error.</p>
+            
+            <div class="feature-list">
+                <h3>How it works:</h3>
+                <ul>
+                    <li><strong>Minimum Raise Calculation:</strong> System calculates the minimum required raise amount</li>
+                    <li><strong>Fund Check:</strong> Compares player's bank with the additional amount needed</li>
+                    <li><strong>Auto Conversion:</strong> If insufficient funds, automatically sends all-in action</li>
+                    <li><strong>Seamless Experience:</strong> Player doesn't see errors, action proceeds smoothly</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Implementation Details</h2>
+            
+            <div class="code-example">
+                <h4>FastGameScene.js - handleRaise() method:</h4>
+                <pre>
+// Check if player has enough money for the minimum raise
+if (myPlayer.bank < totalBetAmount - myPlayer.currentBet) {
+    // Player doesn't have enough for minimum raise, make it all-in
+    console.log('FastGameScene: Insufficient funds for minimum raise, making all-in');
+    this.networkManager.sendPokerAction('allIn', myPlayer.bank);
+} else {
+    // Player has enough money, proceed with normal raise
+    this.networkManager.sendPokerAction('raise', totalBetAmount);
+}
+                </pre>
+            </div>
+
+            <div class="code-example">
+                <h4>AIBotScene.js - handleRaise() method:</h4>
+                <pre>
+// Check if player has enough money for the minimum raise
+const additionalAmountNeeded = raiseAmount - currentPlayer.currentBet;
+if (currentPlayer.bank < additionalAmountNeeded) {
+    // Player doesn't have enough for minimum raise, make it all-in
+    console.log('AIBotScene: Insufficient funds for minimum raise, making all-in');
+    this.raisePlayer(currentPlayer.id, currentPlayer.bank);
+} else {
+    // Player has enough money, proceed with normal raise
+    this.raisePlayer(currentPlayer.id, raiseAmount);
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Test Scenarios</h2>
+            
+            <div class="scenario">
+                <h4>Scenario 1: Preflop with Low Bank</h4>
+                <p><strong>Setup:</strong> Current bet: $0, Big blind: $20, Player bank: $15</p>
+                <p><strong>Action:</strong> Player clicks "Raise" button</p>
+                <p><strong>Expected Result:</strong> System automatically sends all-in action with $15</p>
+                <p><strong>Why:</strong> Minimum raise ($20) > Player bank ($15)</p>
+            </div>
+
+            <div class="scenario">
+                <h4>Scenario 2: Postflop with Insufficient Raise</h4>
+                <p><strong>Setup:</strong> Current bet: $100, Player current bet: $50, Player bank: $30</p>
+                <p><strong>Action:</strong> Player clicks "Raise" button</p>
+                <p><strong>Expected Result:</strong> System automatically sends all-in action with $30</p>
+                <p><strong>Why:</strong> Minimum raise ($110) requires $60 additional, but player only has $30</p>
+            </div>
+
+            <div class="scenario">
+                <h4>Scenario 3: Sufficient Funds</h4>
+                <p><strong>Setup:</strong> Current bet: $50, Player current bet: $50, Player bank: $200</p>
+                <p><strong>Action:</strong> Player clicks "Raise" button</p>
+                <p><strong>Expected Result:</strong> System sends normal raise action with $60</p>
+                <p><strong>Why:</strong> Player has sufficient funds for minimum raise</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Server-Side Handling</h2>
+            <p>The server-side logic remains unchanged and properly handles both raise and all-in actions:</p>
+            
+            <div class="code-example">
+                <h4>PokerGame.js - raisePlayer() method:</h4>
+                <pre>
+// Validate that this is a valid raise
+if (totalBetAmount <= this.currentBet) {
+    throw new Error('Raise must be greater than current bet');
+}
+                </pre>
+            </div>
+
+            <div class="code-example">
+                <h4>PokerGame.js - allInPlayer() method:</h4>
+                <pre>
+// For all-in, we don't need to validate against current bet
+// because all-in is always a valid action regardless of the current bet
+player.currentBet += allInAmount;
+player.bank -= allInAmount;
+this.pot += allInAmount;
+                </pre>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li>This feature only affects the client-side raise button logic</li>
+                <li>Server-side validation remains unchanged for security</li>
+                <li>All-in actions are always valid regardless of current bet</li>
+                <li>The feature works in both multiplayer (FastGameScene) and AI (AIBotScene) modes</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 How to Test</h2>
+            <ol>
+                <li>Start the poker server: <code>cd pokerv2/server && npm run dev</code></li>
+                <li>Open the game in multiple browser tabs</li>
+                <li>Join the game with different players</li>
+                <li>Set all players to ready and start the game</li>
+                <li>Create a scenario where a player has insufficient funds for minimum raise</li>
+                <li>Click the "Raise" button and observe the automatic all-in action</li>
+                <li>Check the browser console for the log message confirming the auto-conversion</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 Quick Links</h2>
+            <a href="index.html" class="button">🎮 Play Multiplayer Game</a>
+            <a href="test-ai-bot.html" class="button">🤖 Test AI Bot Game</a>
+            <a href="test-lobby-system.html" class="button">🏠 Test Lobby System</a>
+            <a href="test-raise-fix.html" class="button">💰 Test Raise Fix</a>
+            <a href="test-allin-fix.html" class="button">🎯 Test All-In Fix</a>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Benefits</h2>
+            <div class="feature-list">
+                <ul>
+                    <li><strong>Better UX:</strong> No confusing error messages for insufficient raises</li>
+                    <li><strong>Intuitive Behavior:</strong> Players expect to be able to go all-in when they can't afford minimum raise</li>
+                    <li><strong>Consistent Logic:</strong> Both multiplayer and AI modes handle this the same way</li>
+                    <li><strong>Error Prevention:</strong> Eliminates "Raise must be greater than current bet" errors</li>
+                    <li><strong>Poker Rules Compliance:</strong> All-in is always a valid action in poker</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎰 Auto All-In Test Page Loaded');
+            console.log('📋 This page demonstrates the new auto all-in feature');
+            console.log('🔧 When raise amount is insufficient, system automatically converts to all-in');
+        });
+    </script>
+</body>
+</html> 

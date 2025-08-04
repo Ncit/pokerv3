@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info-panel {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success { background: #28a745; }
+        .button.success:hover { background: #1e7e34; }
+        .button.danger { background: #dc3545; }
+        .button.danger:hover { background: #c82333; }
+        h1, h2, h3 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Telegram Integration Test</h1>
+        
+        <div class="info-panel">
+            <h3>Test Overview</h3>
+            <p>This page tests the Telegram Web App integration for your poker game.</p>
+            <p>Open this page in Telegram to see the full integration test.</p>
+        </div>
+
+        <h2>🔍 Integration Status</h2>
+        <div id="integration-status">
+            <div class="status warning">
+                <strong>Loading...</strong> Checking Telegram integration...
+            </div>
+        </div>
+
+        <h2>👤 User Data</h2>
+        <div id="user-data" class="data-display">
+            Loading user data...
+        </div>
+
+        <h2>💬 Chat Data</h2>
+        <div id="chat-data" class="data-display">
+            Loading chat data...
+        </div>
+
+        <h2>🔧 Web App Features</h2>
+        <div id="webapp-features">
+            <div class="status warning">
+                <strong>Loading...</strong> Checking Web App features...
+            </div>
+        </div>
+
+        <h2>🎮 Game Integration</h2>
+        <div id="game-integration">
+            <div class="status warning">
+                <strong>Loading...</strong> Testing game integration...
+            </div>
+        </div>
+
+        <h2>🧪 Test Controls</h2>
+        <div>
+            <button class="button" onclick="testMainButton()">Test Main Button</button>
+            <button class="button" onclick="testBackButton()">Test Back Button</button>
+            <button class="button" onclick="testHapticFeedback()">Test Haptic Feedback</button>
+            <button class="button" onclick="testTheme()">Test Theme</button>
+            <button class="button success" onclick="startGame()">Start Poker Game</button>
+            <button class="button danger" onclick="closeApp()">Close App</button>
+        </div>
+
+        <div class="info-panel">
+            <h3>Expected Results</h3>
+            <ul>
+                <li><strong>In Telegram:</strong> All features should work correctly</li>
+                <li><strong>Outside Telegram:</strong> Features will be simulated or disabled</li>
+                <li><strong>User Data:</strong> Should show Telegram user information</li>
+                <li><strong>Web App Features:</strong> Should show available Telegram features</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Integration Test
+        class TelegramIntegrationTest {
+            constructor() {
+                this.isTelegram = false;
+                this.webApp = null;
+                this.init();
+            }
+
+            init() {
+                this.checkTelegramIntegration();
+                this.displayUserData();
+                this.displayChatData();
+                this.testWebAppFeatures();
+                this.testGameIntegration();
+            }
+
+            checkTelegramIntegration() {
+                const statusDiv = document.getElementById('integration-status');
+                
+                if (window.Telegram && window.Telegram.WebApp) {
+                    this.isTelegram = true;
+                    this.webApp = window.Telegram.WebApp;
+                    
+                    // Initialize Web App
+                    this.webApp.ready();
+                    
+                    statusDiv.innerHTML = `
+                        <div class="status success">
+                            <strong>✅ Telegram Web App Detected</strong><br>
+                            Platform: ${this.webApp.platform}<br>
+                            Version: ${this.webApp.version}<br>
+                            Color Scheme: ${this.webApp.colorScheme}<br>
+                            Theme Params: ${JSON.stringify(this.webApp.themeParams, null, 2)}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>❌ Telegram Web App Not Detected</strong><br>
+                            This page is not running inside Telegram.<br>
+                            Features will be simulated for testing purposes.
+                        </div>
+                    `;
+                }
+            }
+
+            displayUserData() {
+                const userDataDiv = document.getElementById('user-data');
+                
+                if (this.isTelegram && this.webApp.initDataUnsafe?.user) {
+                    const user = this.webApp.initDataUnsafe.user;
+                    userDataDiv.textContent = JSON.stringify(user, null, 2);
+                } else {
+                    userDataDiv.textContent = 'User data not available (not in Telegram or user not authenticated)';
+                }
+            }
+
+            displayChatData() {
+                const chatDataDiv = document.getElementById('chat-data');
+                
+                if (this.isTelegram && this.webApp.initDataUnsafe?.chat) {
+                    const chat = this.webApp.initDataUnsafe.chat;
+                    chatDataDiv.textContent = JSON.stringify(chat, null, 2);
+                } else {
+                    chatDataDiv.textContent = 'Chat data not available (not in Telegram or not in a chat)';
+                }
+            }
+
+            testWebAppFeatures() {
+                const featuresDiv = document.getElementById('webapp-features');
+                
+                if (!this.isTelegram) {
+                    featuresDiv.innerHTML = `
+                        <div class="status warning">
+                            <strong>⚠️ Web App Features Not Available</strong><br>
+                            Running outside Telegram - features will be simulated.
+                        </div>
+                    `;
+                    return;
+                }
+
+                const features = [];
+                
+                // Test Main Button
+                try {
+                    this.webApp.MainButton.setText('Test Main Button');
+                    this.webApp.MainButton.show();
+                    features.push('✅ Main Button: Available');
+                } catch (e) {
+                    features.push('❌ Main Button: Error - ' + e.message);
+                }
+
+                // Test Back Button
+                try {
+                    this.webApp.BackButton.show();
+                    features.push('✅ Back Button: Available');
+                } catch (e) {
+                    features.push('❌ Back Button: Error - ' + e.message);
+                }
+
+                // Test Haptic Feedback
+                try {
+                    this.webApp.HapticFeedback.impactOccurred('medium');
+                    features.push('✅ Haptic Feedback: Available');
+                } catch (e) {
+                    features.push('❌ Haptic Feedback: Error - ' + e.message);
+                }
+
+                // Test Theme
+                try {
+                    const theme = this.webApp.themeParams;
+                    features.push('✅ Theme: Available');
+                    features.push(`   Background: ${theme.bg_color || 'default'}`);
+                    features.push(`   Text: ${theme.text_color || 'default'}`);
+                } catch (e) {
+                    features.push('❌ Theme: Error - ' + e.message);
+                }
+
+                featuresDiv.innerHTML = `
+                    <div class="status success">
+                        <strong>🔧 Web App Features</strong><br>
+                        ${features.join('<br>')}
+                    </div>
+                `;
+            }
+
+            testGameIntegration() {
+                const gameDiv = document.getElementById('game-integration');
+                
+                // Test environment detection
+                const urlParams = new URLSearchParams(window.location.search);
+                const envParam = urlParams.get('env');
+                const hash = window.location.hash.toLowerCase();
+                
+                let environment = 'unknown';
+                if (envParam === 'productionTelegram' || hash.includes('#telegram')) {
+                    environment = 'telegram';
+                } else if (this.isTelegram) {
+                    environment = 'telegram (auto-detected)';
+                } else {
+                    environment = 'not telegram';
+                }
+
+                gameDiv.innerHTML = `
+                    <div class="status ${environment.includes('telegram') ? 'success' : 'warning'}">
+                        <strong>🎮 Game Integration</strong><br>
+                        Environment: ${environment}<br>
+                        URL Parameter: ${envParam || 'none'}<br>
+                        Hash Fragment: ${hash || 'none'}<br>
+                        Telegram Detected: ${this.isTelegram ? 'Yes' : 'No'}<br>
+                        Ready for Game: ${environment.includes('telegram') ? 'Yes' : 'No'}
+                    </div>
+                `;
+            }
+        }
+
+        // Test functions
+        function testMainButton() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webApp = window.Telegram.WebApp;
+                webApp.MainButton.setText('Button Clicked!');
+                webApp.MainButton.onClick(() => {
+                    alert('Main button clicked!');
+                    webApp.MainButton.setText('Test Main Button');
+                });
+            } else {
+                alert('Main button test (simulated)');
+            }
+        }
+
+        function testBackButton() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const webApp = window.Telegram.WebApp;
+                webApp.BackButton.show();
+                webApp.BackButton.onClick(() => {
+                    alert('Back button clicked!');
+                    webApp.BackButton.hide();
+                });
+            } else {
+                alert('Back button test (simulated)');
+            }
+        }
+
+        function testHapticFeedback() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                alert('Haptic feedback triggered!');
+            } else {
+                alert('Haptic feedback test (simulated)');
+            }
+        }
+
+        function testTheme() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const theme = window.Telegram.WebApp.themeParams;
+                alert('Current theme:\n' + JSON.stringify(theme, null, 2));
+            } else {
+                alert('Theme test (simulated)');
+            }
+        }
+
+        function startGame() {
+            // Redirect to the poker game with Telegram environment
+            window.location.href = 'index.html?env=productionTelegram';
+        }
+
+        function closeApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.close();
+            } else {
+                alert('Close app test (simulated)');
+            }
+        }
+
+        // Initialize test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TelegramIntegrationTest();
+        });
+    </script>
+</body>
+</html> 

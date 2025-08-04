@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Restriction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .player-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        .controls {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            grid-column: 1 / -1;
+        }
+        .game-state {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            grid-column: 1 / -1;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .warning {
+            color: #ffa500;
+        }
+        .status-indicator {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-accepting {
+            background-color: #1a3a1a;
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+        }
+        .status-not-accepting {
+            background-color: #3a1a1a;
+            border: 2px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚫 Join Restriction Test</h1>
+    <p>Testing that new players cannot join when a game is in progress, but reconnections are allowed.</p>
+    
+    <div class="container">
+        <div class="player-section">
+            <h2>Player 1 (Original)</h2>
+            <div id="player1-info" class="player-info">
+                <p>Status: <span id="player1-status">Disconnected</span></p>
+                <p>Name: <span id="player1-name">-</span></p>
+                <p>Player ID: <span id="player1-id">-</span></p>
+            </div>
+            <button id="player1-join" onclick="joinPlayer(1)">Join as Player 1</button>
+            <button id="player1-disconnect" onclick="disconnectPlayer(1)" disabled>Disconnect</button>
+            <button id="player1-reconnect" onclick="reconnectPlayer(1)" disabled>Reconnect</button>
+            <div id="player1-log" class="log"></div>
+        </div>
+        
+        <div class="player-section">
+            <h2>Player 2 (New)</h2>
+            <div id="player2-info" class="player-info">
+                <p>Status: <span id="player2-status">Disconnected</span></p>
+                <p>Name: <span id="player2-name">-</span></p>
+                <p>Player ID: <span id="player2-id">-</span></p>
+            </div>
+            <button id="player2-join" onclick="joinPlayer(2)">Join as Player 2</button>
+            <button id="player2-disconnect" onclick="disconnectPlayer(2)" disabled>Disconnect</button>
+            <button id="player2-reconnect" onclick="reconnectPlayer(2)" disabled>Reconnect</button>
+            <div id="player2-log" class="log"></div>
+        </div>
+        
+        <div class="controls">
+            <h2>Game Controls</h2>
+            <button id="start-game" onclick="startGame()" disabled>Start Game</button>
+            <button id="reset-room" onclick="resetRoom()" disabled>Reset Room</button>
+            <button id="test-new-player" onclick="testNewPlayerJoin()" disabled>Test New Player Join</button>
+        </div>
+        
+        <div class="game-state">
+            <h2>Game State & Join Status</h2>
+            <p>Status: <span id="game-status">-</span></p>
+            <p>Phase: <span id="game-phase">-</span></p>
+            <p>Players: <span id="game-players">-</span></p>
+            <p>Accepting New Players: <span id="game-accepting">-</span></p>
+            
+            <div id="status-indicator" class="status-indicator">
+                <strong>Join Status:</strong><br>
+                <span id="status-text">Checking...</span>
+            </div>
+            
+            <div id="game-log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const players = {
+            1: { socket: null, playerId: null, name: 'Player1', originalSocket: null },
+            2: { socket: null, playerId: null, name: 'Player2', originalSocket: null }
+        };
+        
+        let gameState = null;
+
+        function log(playerNum, message, type = 'info') {
+            const logElement = document.getElementById(`player${playerNum}-log`);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function gameLog(message, type = 'info') {
+            const logElement = document.getElementById('game-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateGameState(newGameState) {
+            gameState = newGameState;
+            
+            document.getElementById('game-status').textContent = gameState.status;
+            document.getElementById('game-phase').textContent = gameState.phase;
+            document.getElementById('game-players').textContent = `${gameState.playerCount}/${gameState.maxPlayers}`;
+            document.getElementById('game-accepting').textContent = gameState.acceptingNewPlayers ? 'Yes' : 'No';
+            
+            // Update status indicator
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            if (gameState.acceptingNewPlayers) {
+                statusIndicator.className = 'status-indicator status-accepting';
+                statusText.textContent = '✅ Accepting new players';
+            } else {
+                statusIndicator.className = 'status-indicator status-not-accepting';
+                statusText.textContent = '❌ Not accepting new players';
+            }
+            
+            // Update controls
+            updateControls();
+        }
+
+        function updateControls() {
+            const startGameBtn = document.getElementById('start-game');
+            const resetRoomBtn = document.getElementById('reset-room');
+            const testNewPlayerBtn = document.getElementById('test-new-player');
+            
+            startGameBtn.disabled = !gameState.allPlayersReady || gameState.status === 'playing';
+            resetRoomBtn.disabled = false;
+            testNewPlayerBtn.disabled = gameState.acceptingNewPlayers;
+        }
+
+        function updatePlayerInfo(playerNum, playerData) {
+            const status = document.getElementById(`player${playerNum}-status`);
+            const name = document.getElementById(`player${playerNum}-name`);
+            const id = document.getElementById(`player${playerNum}-id`);
+            
+            if (playerData) {
+                status.textContent = playerData.disconnected ? 'Disconnected' : 'Connected';
+                name.textContent = playerData.name;
+                id.textContent = playerData.id;
+            } else {
+                status.textContent = 'Disconnected';
+                name.textContent = '-';
+                id.textContent = '-';
+            }
+        }
+
+        function joinPlayer(playerNum) {
+            if (players[playerNum].socket) {
+                log(playerNum, 'Already connected', 'warning');
+                return;
+            }
+            
+            const socket = io('http://localhost:3000');
+            players[playerNum].socket = socket;
+            players[playerNum].originalSocket = socket;
+            
+            socket.on('connect', () => {
+                log(playerNum, 'Connected to server', 'success');
+                
+                socket.emit('joinGame', {
+                    name: players[playerNum].name,
+                    avatarUrl: `https://gravatar.com/avatar/${playerNum}?s=400&d=robohash&r=x`
+                });
+            });
+            
+            socket.on('gameJoined', (data) => {
+                players[playerNum].playerId = data.playerId;
+                log(playerNum, `Joined game as ${data.playerId} (${data.isReconnection ? 'reconnection' : 'new player'})`, 'success');
+                
+                updateGameState(data.gameState);
+                
+                // Update player info
+                const playerData = data.gameState.players.find(p => p.id === data.playerId);
+                if (playerData) {
+                    updatePlayerInfo(playerNum, playerData);
+                }
+                
+                // Enable buttons
+                document.getElementById(`player${playerNum}-disconnect`).disabled = false;
+                document.getElementById(`player${playerNum}-reconnect`).disabled = false;
+            });
+            
+            socket.on('gameStateUpdate', (data) => {
+                log(playerNum, `Game state updated: ${data.gameState.status} - ${data.gameState.phase}`);
+                updateGameState(data.gameState);
+            });
+            
+            socket.on('error', (data) => {
+                log(playerNum, `Error: ${data.message}`, 'error');
+                gameLog(`Player ${playerNum} error: ${data.message}`, 'error');
+            });
+            
+            socket.on('disconnect', () => {
+                log(playerNum, 'Disconnected from server', 'warning');
+                players[playerNum].socket = null;
+                
+                // Disable buttons
+                document.getElementById(`player${playerNum}-disconnect`).disabled = true;
+            });
+        }
+
+        function disconnectPlayer(playerNum) {
+            if (players[playerNum].socket) {
+                players[playerNum].socket.disconnect();
+                log(playerNum, 'Manually disconnected', 'warning');
+            }
+        }
+
+        function reconnectPlayer(playerNum) {
+            if (players[playerNum].socket) {
+                log(playerNum, 'Already connected', 'warning');
+                return;
+            }
+            
+            // Create new socket for reconnection
+            const socket = io('http://localhost:3000');
+            players[playerNum].socket = socket;
+            
+            socket.on('connect', () => {
+                log(playerNum, 'Reconnecting...', 'warning');
+                
+                socket.emit('joinGame', {
+                    name: players[playerNum].name,
+                    avatarUrl: `https://gravatar.com/avatar/${playerNum}?s=400&d=robohash&r=x`
+                });
+            });
+            
+            socket.on('gameJoined', (data) => {
+                if (data.isReconnection) {
+                    log(playerNum, `Successfully reconnected as ${data.playerId}`, 'success');
+                    gameLog(`Player ${playerNum} successfully reconnected during ${data.gameState.phase} phase`, 'success');
+                } else {
+                    log(playerNum, `Reconnected as new player (should not happen during game)`, 'error');
+                    gameLog(`Player ${playerNum} reconnected as new player during ${data.gameState.phase} phase`, 'error');
+                }
+                
+                updateGameState(data.gameState);
+            });
+            
+            socket.on('error', (data) => {
+                log(playerNum, `Reconnection error: ${data.message}`, 'error');
+                gameLog(`Player ${playerNum} reconnection error: ${data.message}`, 'error');
+            });
+        }
+
+        function startGame() {
+            const connectedPlayer = Object.values(players).find(p => p.socket);
+            if (connectedPlayer && connectedPlayer.socket) {
+                connectedPlayer.socket.emit('startGame');
+                gameLog('Starting game...', 'success');
+            }
+        }
+
+        function resetRoom() {
+            const connectedPlayer = Object.values(players).find(p => p.socket);
+            if (connectedPlayer && connectedPlayer.socket) {
+                connectedPlayer.socket.emit('resetRoom');
+                gameLog('Resetting room...', 'warning');
+            }
+        }
+
+        function testNewPlayerJoin() {
+            gameLog('Testing new player join during active game...', 'warning');
+            
+            // Create a temporary socket to test joining
+            const testSocket = io('http://localhost:3000');
+            
+            testSocket.on('connect', () => {
+                gameLog('Test player connected, attempting to join...', 'warning');
+                
+                testSocket.emit('joinGame', {
+                    name: 'TestPlayer',
+                    avatarUrl: 'https://gravatar.com/avatar/test?s=400&d=robohash&r=x'
+                });
+            });
+            
+            testSocket.on('gameJoined', (data) => {
+                gameLog(`❌ Test player was able to join (this should not happen during game)`, 'error');
+                testSocket.disconnect();
+            });
+            
+            testSocket.on('error', (data) => {
+                gameLog(`✅ Test player correctly blocked: ${data.message}`, 'success');
+                testSocket.disconnect();
+            });
+            
+            // Clean up after 5 seconds
+            setTimeout(() => {
+                if (testSocket.connected) {
+                    testSocket.disconnect();
+                }
+            }, 5000);
+        }
+
+        // Check game status periodically
+        async function checkGameStatus() {
+            try {
+                const response = await fetch('http://localhost:3000/api/game/status');
+                const data = await response.json();
+                updateGameState(data);
+            } catch (error) {
+                console.error('Failed to check game status:', error);
+            }
+        }
+
+        // Initialize
+        gameLog('Join restriction test page loaded.', 'success');
+        gameLog('1. Join as Player 1', 'info');
+        gameLog('2. Join as Player 2', 'info');
+        gameLog('3. Start the game', 'info');
+        gameLog('4. Try to join as a new player (should be blocked)', 'info');
+        gameLog('5. Disconnect and reconnect Player 1 (should work)', 'info');
+        
+        // Check game status every 2 seconds
+        setInterval(checkGameStatus, 2000);
+        checkGameStatus();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Avatar Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .test-section.error {
+            border-left-color: #f44336;
+        }
+
+        .test-section.warning {
+            border-left-color: #ff9800;
+        }
+
+        .avatar-display {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .avatar-display img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .avatar-display.fallback img {
+            border-color: #ff9800;
+        }
+
+        .avatar-display.success img {
+            border-color: #4CAF50;
+        }
+
+        .avatar-display.error img {
+            border-color: #f44336;
+        }
+
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        h1, h2, h3 {
+            margin: 0 0 15px 0;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        .status.warning {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid rgba(255, 152, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 CORS Avatar Fix Test</h1>
+        
+        <div class="test-section">
+            <h2>📱 CORS Issue Detection</h2>
+            <p>This test verifies that avatar URLs from CORS-prone domains (Telegram, VK) are automatically detected and replaced with fallback avatars.</p>
+            
+            <div class="status success">
+                <strong>✅ CORS Protection Active:</strong> The app now automatically detects and handles CORS-prone avatar URLs.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test Avatar URLs</h2>
+            
+            <div class="avatar-display fallback">
+                <img src="assets/avatar.png" alt="Fallback Avatar" onerror="this.style.display='none'">
+                <div>
+                    <strong>Fallback Avatar (assets/avatar.png)</strong><br>
+                    <small>✅ Always accessible, scale: 0.15</small>
+                </div>
+            </div>
+
+            <div class="avatar-display error">
+                <img src="https://t.me/i/userpic/320/UHk6Ee26RXycmHyFrfwba6Xs4334HuKD_YiMgVA6pQw.svg" alt="Telegram Avatar" onerror="this.style.display='none'">
+                <div>
+                    <strong>Telegram Avatar (t.me domain)</strong><br>
+                    <small>❌ CORS blocked - should use fallback</small>
+                </div>
+            </div>
+
+            <div class="avatar-display error">
+                <img src="https://vk.com/images/camera_200.png" alt="VK Avatar" onerror="this.style.display='none'">
+                <div>
+                    <strong>VK Avatar (vk.com domain)</strong><br>
+                    <small>❌ CORS blocked - should use fallback</small>
+                </div>
+            </div>
+
+            <div class="avatar-display success">
+                <img src="https://gravatar.com/avatar/1?s=400&d=robohash&r=x" alt="Gravatar" onerror="this.style.display='none'">
+                <div>
+                    <strong>Gravatar (gravatar.com domain)</strong><br>
+                    <small>✅ CORS allowed - should work normally</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Test Functions</h2>
+            
+            <button class="button" onclick="testCorsDetection()">Test CORS Detection</button>
+            <button class="button" onclick="testAvatarFallback()">Test Avatar Fallback</button>
+            <button class="button" onclick="testGameIntegration()">Test Game Integration</button>
+            <button class="button" onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="test-results" class="log">
+                Ready to test CORS avatar handling...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>💡 Expected Behavior</h2>
+            <ul>
+                <li><strong>Telegram avatars (t.me):</strong> Automatically detected as CORS-prone, fallback to avatar.png</li>
+                <li><strong>VK avatars (vk.com):</strong> Automatically detected as CORS-prone, fallback to avatar.png</li>
+                <li><strong>Other avatars:</strong> Used normally if accessible</li>
+                <li><strong>Fallback avatars:</strong> Scale 0.15 (smaller than user avatars at 0.3)</li>
+                <li><strong>No CORS errors:</strong> Console should be clean of CORS warnings</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the getSafeAvatarUrl function
+        import { getSafeAvatarUrl } from './src/scripts/telegramlogic.js';
+
+        // Test avatar URLs
+        const testUrls = [
+            'https://t.me/i/userpic/320/UHk6Ee26RXycmHyFrfwba6Xs4334HuKD_YiMgVA6pQw.svg',
+            'https://vk.com/images/camera_200.png',
+            'https://gravatar.com/avatar/1?s=400&d=robohash&r=x',
+            'assets/avatar.png',
+            '',
+            'null',
+            'undefined',
+            'https://example.com/avatar.jpg'
+        ];
+
+        function log(message) {
+            const logDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        window.testCorsDetection = function() {
+            log('🧪 Testing CORS detection...');
+            
+            testUrls.forEach((url, index) => {
+                const result = getSafeAvatarUrl(url);
+                const isFallback = result === 'assets/avatar.png';
+                const status = isFallback ? '✅ FALLBACK' : '🔗 DIRECT';
+                
+                log(`${status} Test ${index + 1}: "${url}" → "${result}"`);
+            });
+            
+            log('✅ CORS detection test completed');
+        };
+
+        window.testAvatarFallback = function() {
+            log('🧪 Testing avatar fallback logic...');
+            
+            // Test Telegram avatar
+            const telegramAvatar = 'https://t.me/i/userpic/320/UHk6Ee26RXycmHyFrfwba6Xs4334HuKD_YiMgVA6pQw.svg';
+            const telegramResult = getSafeAvatarUrl(telegramAvatar);
+            log(`📱 Telegram avatar: "${telegramAvatar}" → "${telegramResult}"`);
+            
+            // Test VK avatar
+            const vkAvatar = 'https://vk.com/images/camera_200.png';
+            const vkResult = getSafeAvatarUrl(vkAvatar);
+            log(`📱 VK avatar: "${vkAvatar}" → "${vkResult}"`);
+            
+            // Test empty avatar
+            const emptyResult = getSafeAvatarUrl('');
+            log(`📱 Empty avatar: "" → "${emptyResult}"`);
+            
+            // Test null avatar
+            const nullResult = getSafeAvatarUrl('null');
+            log(`📱 Null avatar: "null" → "${nullResult}"`);
+            
+            log('✅ Avatar fallback test completed');
+        };
+
+        window.testGameIntegration = function() {
+            log('🧪 Testing game integration...');
+            
+            // Simulate appData with Telegram avatar
+            window.appData = {
+                first_name: 'Test User',
+                userAvatar: 'https://t.me/i/userpic/320/UHk6Ee26RXycmHyFrfwba6Xs4334HuKD_YiMgVA6pQw.svg',
+                vk_user_id: 12345
+            };
+            
+            const safeAvatar = getSafeAvatarUrl(window.appData.userAvatar);
+            log(`🎮 Game avatar: "${window.appData.userAvatar}" → "${safeAvatar}"`);
+            
+            // Check if fallback should be used
+            const isFallback = safeAvatar === 'assets/avatar.png';
+            const scale = isFallback ? 0.3 : 0.3;
+            log(`🎮 Avatar scale: ${scale} (${isFallback ? 'fallback' : 'user avatar'})`);
+            
+            log('✅ Game integration test completed');
+        };
+
+        window.clearLog = function() {
+            document.getElementById('test-results').innerHTML = 'Log cleared...\n';
+        };
+
+        // Auto-run basic test on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 CORS Avatar Fix Test initialized');
+            log('📱 Testing basic CORS detection...');
+            testCorsDetection();
+        });
+    </script>
+</body>
+</html> 

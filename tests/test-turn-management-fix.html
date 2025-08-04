@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turn Management Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-info h2 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .test-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-info li {
+            margin: 5px 0;
+        }
+        .debug-log {
+            background-color: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+        .status {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .player-info {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .player-info h4 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .turn-indicator {
+            background-color: #ff9800;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-info">
+            <h2>🎯 Turn Management Fix Test</h2>
+            <p>This test focuses on debugging the turn management issue where players cannot act despite it being their turn.</p>
+            
+            <h3>🔧 Recent Fixes Applied:</h3>
+            <ul>
+                <li><strong>Fixed getCurrentPlayerId():</strong> Now properly updates this.currentPlayer when skipping folded/all-in players</li>
+                <li><strong>Enhanced nextPlayer():</strong> Added validation and better logging for turn advancement</li>
+                <li><strong>Improved isBettingRoundComplete():</strong> Added detailed logging for betting round completion logic</li>
+                <li><strong>Fixed startBettingRound():</strong> Replaced recursive nextPlayer() calls with direct index advancement</li>
+                <li><strong>Added comprehensive logging:</strong> Detailed debug logs for all turn-related operations</li>
+            </ul>
+            
+            <h3>🎮 Test Instructions:</h3>
+            <ul>
+                <li>Open this page in multiple browser tabs/windows</li>
+                <li>Join with different player names in each tab</li>
+                <li>Start the game when you have 2+ players</li>
+                <li>Watch the debug logs to see turn advancement</li>
+                <li>Test if buttons are enabled when it's your turn</li>
+                <li>Check if actions are properly processed</li>
+            </ul>
+            
+            <h3>🔍 What to Look For:</h3>
+            <ul>
+                <li><strong>Turn Validation:</strong> Check if getCurrentPlayerId() returns the correct player</li>
+                <li><strong>Button State:</strong> Verify buttons are enabled when isMyTurn is true</li>
+                <li><strong>Action Processing:</strong> Confirm actions are accepted and turn advances</li>
+                <li><strong>Betting Round Logic:</strong> Monitor betting round completion and phase transitions</li>
+            </ul>
+        </div>
+
+        <div class="status">
+            <h3>Connection Status</h3>
+            <div id="connectionStatus">Disconnected</div>
+        </div>
+
+        <div class="status">
+            <h3>Game Status</h3>
+            <div id="gameStatus">Waiting to connect...</div>
+        </div>
+
+        <div class="status">
+            <h3>Turn Information</h3>
+            <div id="turnInfo">No turn information available</div>
+        </div>
+
+        <div class="player-info">
+            <h4>Players</h4>
+            <div id="playersList">No players</div>
+        </div>
+
+        <div class="turn-indicator" id="turnIndicator" style="display: none;">
+            🎯 YOUR TURN!
+        </div>
+
+        <div class="action-buttons" id="actionButtons" style="display: none;">
+            <button class="button" id="foldButton">Fold</button>
+            <button class="button" id="callButton">Call</button>
+            <button class="button" id="raiseButton">Raise</button>
+            <button class="button" id="allInButton">All In</button>
+        </div>
+
+        <div class="action-buttons" id="lobbyButtons" style="display: none;">
+            <button class="button" id="startGameButton">Start Game</button>
+        </div>
+
+        <div class="action-buttons" id="nextRoundButtons" style="display: none;">
+            <button class="button" id="nextRoundButton">Next Round</button>
+        </div>
+
+        <div class="debug-log" id="debugLog">Debug log will appear here...</div>
+    </div>
+
+    <script src="dependencies/phaser.js"></script>
+    <script src="dependencies/rexui.js"></script>
+    <script src="dependencies/vkbridge.js"></script>
+    <script src="client/src/config/GameConfig.js"></script>
+    <script src="client/src/config/AssetConfig.js"></script>
+    <script src="client/src/config/ButtonConfig.js"></script>
+    <script src="client/src/config/PlayerConfig.js"></script>
+    <script src="client/src/utils/EventManager.js"></script>
+    <script src="client/src/utils/AssetHelper.js"></script>
+    <script src="client/src/utils/HandEvaluator.js"></script>
+    <script src="client/src/utils/PositionCalculator.js"></script>
+    <script src="client/src/utils/NgrokUtils.js"></script>
+    <script src="client/src/managers/NetworkManager.js"></script>
+    <script src="client/src/managers/PlayerManager.js"></script>
+    <script src="client/src/managers/CardManager.js"></script>
+    <script src="client/src/managers/ButtonManager.js"></script>
+    <script src="client/src/managers/ChatManager.js"></script>
+    <script src="client/src/managers/UIManager.js"></script>
+    <script src="client/src/scripts/vklogic.js"></script>
+    <script src="client/src/scenes/LoadingScene.js"></script>
+    <script src="client/src/scenes/LobbyScene.js"></script>
+    <script src="client/src/scenes/FastGameScene.js"></script>
+    <script src="client/src/scenes/FriendsGameScene.js"></script>
+    <script src="client/src/scenes/AIBotScene.js"></script>
+    <script src="client/src/main.js"></script>
+
+    <script>
+        // Enhanced debug logging
+        const originalLog = console.log;
+        const debugLog = document.getElementById('debugLog');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        };
+
+        // Test-specific logging
+        console.log('🧪 Turn Management Fix Test Started');
+        console.log('🔧 Enhanced logging enabled');
+        console.log('🎯 Focus: Turn validation and button enablement');
+
+        // Override window.isDebug for production
+        window.isDebug = false;
+        console.log('🔧 Debug mode disabled for production');
+
+        // Monitor game state changes
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 DOM loaded, monitoring game state...');
+            
+            // Monitor turn changes
+            const originalUpdateTurnIndicator = FastGameScene.prototype.updateTurnIndicator;
+            FastGameScene.prototype.updateTurnIndicator = function() {
+                console.log('🎯 updateTurnIndicator called');
+                const result = originalUpdateTurnIndicator.call(this);
+                console.log('🎯 updateTurnIndicator result:', result);
+                return result;
+            };
+
+            // Monitor button updates
+            const originalUpdateActionButtons = FastGameScene.prototype.updateActionButtons;
+            FastGameScene.prototype.updateActionButtons = function() {
+                console.log('🎯 updateActionButtons called');
+                const result = originalUpdateActionButtons.call(this);
+                console.log('🎯 updateActionButtons result:', result);
+                return result;
+            };
+
+            // Monitor action handlers
+            const originalHandleFold = FastGameScene.prototype.handleFold;
+            FastGameScene.prototype.handleFold = function() {
+                console.log('🎯 handleFold called');
+                const result = originalHandleFold.call(this);
+                console.log('🎯 handleFold result:', result);
+                return result;
+            };
+
+            const originalHandleCall = FastGameScene.prototype.handleCall;
+            FastGameScene.prototype.handleCall = function() {
+                console.log('🎯 handleCall called');
+                const result = originalHandleCall.call(this);
+                console.log('🎯 handleCall result:', result);
+                return result;
+            };
+
+            const originalHandleRaise = FastGameScene.prototype.handleRaise;
+            FastGameScene.prototype.handleRaise = function() {
+                console.log('🎯 handleRaise called');
+                const result = originalHandleRaise.call(this);
+                console.log('🎯 handleRaise result:', result);
+                return result;
+            };
+
+            const originalHandleAllIn = FastGameScene.prototype.handleAllIn;
+            FastGameScene.prototype.handleAllIn = function() {
+                console.log('🎯 handleAllIn called');
+                const result = originalHandleAllIn.call(this);
+                console.log('🎯 handleAllIn result:', result);
+                return result;
+            };
+        });
+    </script>
+</body>
+</html> 

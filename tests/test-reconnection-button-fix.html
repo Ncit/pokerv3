@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Reconnection Button Fix</title>
+    <link rel="stylesheet" href="./assets/fonts/fonts.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            line-height: 1;
+            font-family: var(--font-primary);
+            background-color: #040218;
+            color: white;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .test-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            font-size: 12px;
+            max-width: 400px;
+        }
+
+        .test-info h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .test-info ul {
+            list-style: none;
+            margin-left: 10px;
+        }
+
+        .test-info li {
+            margin-bottom: 5px;
+        }
+
+        .test-info .step {
+            color: #4DA6FF;
+        }
+
+        .test-info .expected {
+            color: #4DBB5F;
+        }
+
+        .test-info .warning {
+            color: #FFA500;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>🧪 Reconnection Button Fix Test</h3>
+        <ul>
+            <li class="step">1. Start the server: <code>cd server && npm start</code></li>
+            <li class="step">2. Open this page in 3 different browser tabs</li>
+            <li class="step">3. Join the game with different player names (Player1, Player2, Player3)</li>
+            <li class="step">4. Start a game with all 3 players</li>
+            <li class="step">5. Close Player1's browser tab (simulate disconnect)</li>
+            <li class="step">6. Reopen Player1's browser tab and rejoin with same name</li>
+            <li class="step">7. Close Player2's browser tab (simulate disconnect)</li>
+            <li class="expected">Expected: Player1 should still be able to click buttons</li>
+            <li class="expected">Expected: Room should reset to lobby state</li>
+            <li class="expected">Expected: Player1 should be able to start a new game</li>
+            <li class="warning">Note: This tests the reconnection + room reset scenario</li>
+        </ul>
+    </div>
+
+    <div id="game-container"></div>
+
+    <script src="./dependencies/phaser.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script type="module" src="./client/src/main.js"></script>
+</body>
+</html> 

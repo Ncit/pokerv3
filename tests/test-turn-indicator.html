@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turn Indicator Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .player-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        .controls {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            grid-column: 1 / -1;
+        }
+        .game-state {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            grid-column: 1 / -1;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .turn-indicator {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #FFD700;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .turn-indicator.my-turn {
+            border-color: #00FF00;
+            background-color: #1a3a1a;
+        }
+        .turn-indicator.other-turn {
+            border-color: #FFD700;
+            background-color: #3a3a1a;
+        }
+        .turn-indicator.showdown {
+            border-color: #FF6B6B;
+            background-color: #3a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Turn Indicator Test</h1>
+    <p>Testing the new turn indicator feature on the right side of the screen.</p>
+    
+    <div class="container">
+        <div class="player-section">
+            <h2>Player 1</h2>
+            <div id="player1-info" class="player-info">
+                <p>Status: <span id="player1-status">Disconnected</span></p>
+                <p>Name: <span id="player1-name">-</span></p>
+                <p>Bank: <span id="player1-bank">-</span></p>
+                <p>Current Bet: <span id="player1-bet">-</span></p>
+            </div>
+            <button id="player1-join" onclick="joinPlayer(1)">Join as Player 1</button>
+            <button id="player1-disconnect" onclick="disconnectPlayer(1)" disabled>Disconnect</button>
+            <div id="player1-log" class="log"></div>
+        </div>
+        
+        <div class="player-section">
+            <h2>Player 2</h2>
+            <div id="player2-info" class="player-info">
+                <p>Status: <span id="player2-status">Disconnected</span></p>
+                <p>Name: <span id="player2-name">-</span></p>
+                <p>Bank: <span id="player2-bank">-</span></p>
+                <p>Current Bet: <span id="player2-bet">-</span></p>
+            </div>
+            <button id="player2-join" onclick="joinPlayer(2)">Join as Player 2</button>
+            <button id="player2-disconnect" onclick="disconnectPlayer(2)" disabled>Disconnect</button>
+            <div id="player2-log" class="log"></div>
+        </div>
+        
+        <div class="controls">
+            <h2>Game Controls</h2>
+            <button id="start-game" onclick="startGame()" disabled>Start Game</button>
+            <button id="start-hand" onclick="startNewHand()" disabled>Start New Hand</button>
+            <button id="reset-room" onclick="resetRoom()" disabled>Reset Room</button>
+            <button id="fold-btn" onclick="makeAction('fold')" disabled>Fold</button>
+            <button id="check-btn" onclick="makeAction('check')" disabled>Check</button>
+            <button id="call-btn" onclick="makeAction('call')" disabled>Call</button>
+            <button id="raise-btn" onclick="makeAction('raise')" disabled>Raise</button>
+            <button id="allin-btn" onclick="makeAction('allIn')" disabled>All In</button>
+        </div>
+        
+        <div class="game-state">
+            <h2>Game State & Turn Indicator</h2>
+            <p>Status: <span id="game-status">-</span></p>
+            <p>Phase: <span id="game-phase">-</span></p>
+            <p>Pot: <span id="game-pot">-</span></p>
+            <p>Current Bet: <span id="game-current-bet">-</span></p>
+            <p>Ready Players: <span id="game-ready-count">-</span></p>
+            <p>Total Players: <span id="game-total-players">-</span></p>
+            
+            <div id="turn-indicator" class="turn-indicator">
+                <strong>Turn Indicator:</strong><br>
+                <span id="turn-text">Waiting for connection...</span>
+            </div>
+            
+            <div id="game-log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const players = {
+            1: { socket: null, playerId: null, name: 'Player1' },
+            2: { socket: null, playerId: null, name: 'Player2' }
+        };
+        
+        let currentPlayer = null;
+
+        function log(playerNum, message) {
+            const logElement = document.getElementById(`player${playerNum}-log`);
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function gameLog(message) {
+            const logElement = document.getElementById('game-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateTurnIndicator(gameState, players) {
+            const turnIndicator = document.getElementById('turn-indicator');
+            const turnText = document.getElementById('turn-text');
+            
+            if (!gameState || gameState.status !== 'playing') {
+                turnText.textContent = 'Not in game';
+                turnIndicator.className = 'turn-indicator';
+                return;
+            }
+
+            // Check if game is in showdown phase
+            if (gameState.phase === 'showdown') {
+                turnText.textContent = 'Showdown - Game ended';
+                turnIndicator.className = 'turn-indicator showdown';
+                return;
+            }
+
+            // Get current player
+            const currentPlayer = players.find(p => p.isCurrentPlayer);
+            
+            if (currentPlayer) {
+                // Check if it's the current player's turn
+                const isMyTurn = currentPlayer.id === players[0]?.id || currentPlayer.id === players[1]?.id;
+                
+                if (isMyTurn) {
+                    turnText.textContent = '🎯 YOUR TURN!';
+                    turnIndicator.className = 'turn-indicator my-turn';
+                } else {
+                    turnText.textContent = `Waiting for: ${currentPlayer.name}`;
+                    turnIndicator.className = 'turn-indicator other-turn';
+                }
+            } else {
+                // No current player found
+                turnText.textContent = 'Waiting for players...';
+                turnIndicator.className = 'turn-indicator other-turn';
+            }
+        }
+
+        function updatePlayerInfo(playerNum, playerData) {
+            const status = document.getElementById(`player${playerNum}-status`);
+            const name = document.getElementById(`player${playerNum}-name`);
+            const bank = document.getElementById(`player${playerNum}-bank`);
+            const bet = document.getElementById(`player${playerNum}-bet`);
+            
+            if (playerData) {
+                status.textContent = playerData.disconnected ? 'Disconnected' : 'Connected';
+                name.textContent = playerData.name;
+                bank.textContent = playerData.bank;
+                bet.textContent = playerData.currentBet;
+            } else {
+                status.textContent = 'Disconnected';
+                name.textContent = '-';
+                bank.textContent = '-';
+                bet.textContent = '-';
+            }
+        }
+
+        function updateGameState(gameState) {
+            if (!gameState) return;
+            
+            document.getElementById('game-status').textContent = gameState.status;
+            document.getElementById('game-phase').textContent = gameState.phase;
+            document.getElementById('game-pot').textContent = gameState.pot;
+            document.getElementById('game-current-bet').textContent = gameState.currentBet;
+            document.getElementById('game-ready-count').textContent = gameState.readyCount;
+            document.getElementById('game-total-players').textContent = gameState.totalPlayers;
+            
+            // Update player info
+            gameState.players.forEach(player => {
+                if (player.name === 'Player1') {
+                    updatePlayerInfo(1, player);
+                } else if (player.name === 'Player2') {
+                    updatePlayerInfo(2, player);
+                }
+            });
+            
+            // Update turn indicator
+            updateTurnIndicator(gameState, gameState.players);
+            
+            // Update controls
+            updateControls(gameState);
+        }
+
+        function updateControls(gameState) {
+            const startGameBtn = document.getElementById('start-game');
+            const startHandBtn = document.getElementById('start-hand');
+            const resetRoomBtn = document.getElementById('reset-room');
+            const foldBtn = document.getElementById('fold-btn');
+            const checkBtn = document.getElementById('check-btn');
+            const callBtn = document.getElementById('call-btn');
+            const raiseBtn = document.getElementById('raise-btn');
+            const allinBtn = document.getElementById('allin-btn');
+            
+            // Game controls
+            startGameBtn.disabled = !gameState.allPlayersReady || gameState.status === 'playing';
+            startHandBtn.disabled = gameState.status !== 'playing';
+            resetRoomBtn.disabled = false;
+            
+            // Action controls - only enable for current player
+            const currentPlayerData = gameState.players.find(p => p.isCurrentPlayer);
+            const canAct = currentPlayerData && gameState.status === 'playing' && 
+                          !currentPlayerData.folded && !currentPlayerData.allIn;
+            
+            foldBtn.disabled = !canAct;
+            checkBtn.disabled = !canAct;
+            callBtn.disabled = !canAct;
+            raiseBtn.disabled = !canAct;
+            allinBtn.disabled = !canAct;
+        }
+
+        function joinPlayer(playerNum) {
+            if (players[playerNum].socket) {
+                log(playerNum, 'Already connected');
+                return;
+            }
+            
+            const socket = io('http://localhost:3000');
+            players[playerNum].socket = socket;
+            
+            socket.on('connect', () => {
+                log(playerNum, 'Connected to server');
+                
+                socket.emit('joinGame', {
+                    name: players[playerNum].name,
+                    avatarUrl: `https://gravatar.com/avatar/${playerNum}?s=400&d=robohash&r=x`
+                });
+            });
+            
+            socket.on('gameJoined', (data) => {
+                players[playerNum].playerId = data.playerId;
+                log(playerNum, `Joined game as ${data.playerId} (${data.isReconnection ? 'reconnection' : 'new player'})`);
+                
+                updateGameState(data.gameState);
+                
+                // Enable disconnect button
+                document.getElementById(`player${playerNum}-disconnect`).disabled = false;
+            });
+            
+            socket.on('gameStateUpdate', (data) => {
+                log(playerNum, `Game state updated: ${data.gameState.status} - ${data.gameState.phase}`);
+                updateGameState(data.gameState);
+                
+                if (data.lastAction) {
+                    log(playerNum, `Action: ${data.lastAction.action} by ${data.lastAction.playerName}`);
+                    gameLog(`🎯 Turn changed: ${data.lastAction.playerName} performed ${data.lastAction.action}`);
+                }
+            });
+            
+            socket.on('playerJoined', (data) => {
+                log(playerNum, `Player joined: ${data.player.name}`);
+            });
+            
+            socket.on('playerReconnected', (data) => {
+                log(playerNum, `Player reconnected: ${data.playerName}`);
+            });
+            
+            socket.on('playerDisconnected', (data) => {
+                log(playerNum, `Player disconnected: ${data.playerName}`);
+            });
+            
+            socket.on('error', (data) => {
+                log(playerNum, `Error: ${data.message}`);
+            });
+            
+            socket.on('disconnect', () => {
+                log(playerNum, 'Disconnected from server');
+                players[playerNum].socket = null;
+                players[playerNum].playerId = null;
+                
+                // Disable buttons
+                document.getElementById(`player${playerNum}-disconnect`).disabled = true;
+            });
+        }
+
+        function disconnectPlayer(playerNum) {
+            if (players[playerNum].socket) {
+                players[playerNum].socket.disconnect();
+                log(playerNum, 'Manually disconnected');
+            }
+        }
+
+        function startGame() {
+            const connectedPlayer = Object.values(players).find(p => p.socket);
+            if (connectedPlayer && connectedPlayer.socket) {
+                connectedPlayer.socket.emit('startGame');
+                gameLog('Starting game...');
+            }
+        }
+
+        function startNewHand() {
+            const connectedPlayer = Object.values(players).find(p => p.socket);
+            if (connectedPlayer && connectedPlayer.socket) {
+                connectedPlayer.socket.emit('startNewHand');
+                gameLog('Starting new hand...');
+            }
+        }
+
+        function resetRoom() {
+            const connectedPlayer = Object.values(players).find(p => p.socket);
+            if (connectedPlayer && connectedPlayer.socket) {
+                connectedPlayer.socket.emit('resetRoom');
+                gameLog('Resetting room...');
+            }
+        }
+
+        function makeAction(action) {
+            const currentPlayerData = Object.values(players).find(p => p.socket);
+            if (currentPlayerData && currentPlayerData.socket) {
+                const actionData = { action };
+                
+                if (action === 'call' || action === 'raise') {
+                    actionData.amount = 20; // Default amount
+                }
+                
+                currentPlayerData.socket.emit('pokerAction', actionData);
+                gameLog(`Making action: ${action}`);
+            }
+        }
+
+        // Initialize
+        gameLog('Turn indicator test page loaded. Click "Join as Player 1" and "Join as Player 2" to start testing.');
+        gameLog('The turn indicator will show on the right side of the screen in the actual game.');
+    </script>
+</body>
+</html> 

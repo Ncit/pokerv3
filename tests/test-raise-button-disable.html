@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raise Button Disable Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f44336;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .debug-info {
+            background-color: #2d1b69;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .debug-info h4 {
+            color: #9c27b0;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🎯 Raise Button Disable Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test verifies that the raise button is properly disabled when the maximum number of raises for the round has been reached.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🐛 Issue Description</h2>
+            <div class="test-description">
+                Previously, the raise button remained enabled even when the maximum raises for the round were reached. It only showed a visual indication (grayed text) but was still clickable.
+            </div>
+            
+            <div class="debug-info">
+                <h4>Problem Identified:</h4>
+                <div class="code-block">
+// OLD BEHAVIOR:
+- Raise button always enabled when it's player's turn
+- Only visual indication (grayed text) when max raises reached
+- Button still clickable even when raises not allowed
+
+// NEW BEHAVIOR:
+- Raise button disabled when maximum raises reached
+- Button not clickable when raises not allowed
+- Clear visual feedback (grayed text + disabled state)
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario: Raise Button Disable</h2>
+            <div class="test-description">
+                Test that the raise button is properly disabled when maximum raises are reached for the round.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in multiple browser windows (3-4 players)</li>
+                    <li>Join as different players</li>
+                    <li>Start the game</li>
+                    <li>Play through betting rounds until raises are made</li>
+                    <li>Continue until maximum raises (3) are reached</li>
+                    <li>Verify that the raise button becomes disabled</li>
+                    <li>Check console for raise limit logs</li>
+                    <li>Verify that other buttons (fold, call, all-in) remain enabled</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Console should show: <code>"FastGameScene: Raise button disabled - maximum raises reached for this round"</code></li>
+                    <li>Raise button should be <span class="highlight">completely disabled</span> (not clickable)</li>
+                    <li>Raise button text should be <span class="highlight">grayed out</span></li>
+                    <li>Other action buttons (fold, call, all-in) should remain <span class="highlight">enabled and clickable</span></li>
+                    <li>Button interactivity status should show raise button as disabled</li>
+                    <li>No raise actions should be sent when clicking the disabled button</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Fixes Applied</h2>
+            <div class="test-description">
+                Updated the button management logic to properly disable the raise button when maximum raises are reached:
+            </div>
+            
+            <div class="expected-result">
+                <h4>Updated updateActionButtons() Method:</h4>
+                <div class="code-block">
+updateActionButtons() {
+    // ... existing logic ...
+    
+    if (isMyTurn && myPlayer && !myPlayer.folded && !myPlayer.allIn) {
+        // Enable basic action buttons (fold, call, all-in)
+        this.foldButton.setInteractive();
+        this.callButton.setInteractive();
+        this.allInButton.setInteractive();
+        
+        // Reset text colors to normal for enabled buttons
+        this.foldButtonText.setFill('#ffffff');
+        this.callButtonText.setFill('#ffffff');
+        this.allInButtonText.setFill('#ffffff');
+        
+        // Check raise button separately based on raise limit
+        const canRaise = this.networkManager.canRaise();
+        if (canRaise) {
+            // Enable raise button if raises are still allowed
+            this.raiseButton.setInteractive();
+            this.raiseButtonText.setFill('#ffffff');
+            console.log('FastGameScene: Raise button enabled - raises still allowed');
+        } else {
+            // Disable raise button if maximum raises reached
+            this.raiseButton.disableInteractive();
+            this.raiseButtonText.setFill('#888888');
+            console.log('FastGameScene: Raise button disabled - maximum raises reached for this round');
+        }
+    }
+}
+                </div>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Updated enablePlayerActions() Method:</h4>
+                <div class="code-block">
+enablePlayerActions() {
+    // Enable action buttons for human player (excluding raise button which is handled separately)
+    this.foldButton.setInteractive();
+    this.callButton.setInteractive();
+    this.allInButton.setInteractive();
+    
+    // Reset text colors to normal
+    this.foldButtonText.setFill('#ffffff');
+    this.callButtonText.setFill('#ffffff');
+    this.allInButtonText.setFill('#ffffff');
+    // Note: raise button is handled separately in updateActionButtons() based on raise limits
+    
+    console.log('FastGameScene: Basic action buttons enabled (raise button handled separately)');
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📊 Expected Console Output</h2>
+            <div class="test-description">
+                The enhanced logging will show detailed information about raise button state:
+            </div>
+            
+            <div class="debug-info">
+                <h4>Expected Console Logs:</h4>
+                <div class="code-block">
+FastGameScene: Basic action buttons enabled - it is my turn
+FastGameScene: Raise button enabled - raises still allowed
+// ... after maximum raises reached ...
+FastGameScene: Basic action buttons enabled - it is my turn
+FastGameScene: Raise button disabled - maximum raises reached for this round
+FastGameScene: Button interactivity status: {
+    foldButton: true,
+    callButton: true,
+    raiseButton: false,  // ← This should be false when disabled
+    allInButton: true
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Testing Different Scenarios</h2>
+            <div class="test-description">
+                Test the raise button disable functionality in various game situations:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li><strong>Preflop Phase:</strong> Test raise limits during preflop betting</li>
+                    <li><strong>Flop Phase:</strong> Test raise limits during flop betting</li>
+                    <li><strong>Turn Phase:</strong> Test raise limits during turn betting</li>
+                    <li><strong>River Phase:</strong> Test raise limits during river betting</li>
+                    <li><strong>Reconnection:</strong> Test raise button state after reconnection</li>
+                    <li><strong>New Hand:</strong> Verify raise button resets for new hands</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Edge Cases to Test</h2>
+            <div class="warning">
+                <strong>Important Edge Cases:</strong>
+                <ul>
+                    <li><strong>All-In Situations:</strong> Raise button should be disabled when player is all-in</li>
+                    <li><strong>Folded Players:</strong> Raise button should be disabled when player has folded</li>
+                    <li><strong>Spectator Mode:</strong> Raise button should be disabled for spectators</li>
+                    <li><strong>Showdown Phase:</strong> All buttons should be disabled during showdown</li>
+                    <li><strong>Reconnection:</strong> Raise button state should be preserved after reconnection</li>
+                    <li><strong>Multiple Players:</strong> Test with different numbers of players</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">✅ Verification Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify the raise button disable functionality:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ Raise button is enabled when raises are allowed</li>
+                    <li>✅ Raise button is disabled when maximum raises reached</li>
+                    <li>✅ Disabled raise button is not clickable</li>
+                    <li>✅ Disabled raise button has grayed text</li>
+                    <li>✅ Other buttons remain enabled when raise is disabled</li>
+                    <li>✅ Console shows appropriate raise button state logs</li>
+                    <li>✅ Button interactivity status shows correct state</li>
+                    <li>✅ Raise button resets to enabled state for new hands</li>
+                    <li>✅ Raise button state is preserved after reconnection</li>
+                    <li>✅ No raise actions are sent when button is disabled</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Implementation Details</h2>
+            <div class="test-description">
+                Key changes made to implement raise button disable functionality:
+            </div>
+            
+            <div class="success">
+                <strong>Core Changes:</strong>
+                <ul>
+                    <li><strong>Separate Raise Button Logic:</strong> Raise button is now handled separately from other action buttons</li>
+                    <li><strong>Conditional Enable/Disable:</strong> Raise button state depends on <code>canRaise()</code> method</li>
+                    <li><strong>Visual Feedback:</strong> Disabled raise button shows grayed text</li>
+                    <li><strong>Proper Interactivity:</strong> Disabled button is not clickable</li>
+                    <li><strong>Enhanced Logging:</strong> Detailed logs for raise button state changes</li>
+                    <li><strong>Reconnection Support:</strong> Raise button state preserved during reconnection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 NetworkManager Integration</h2>
+            <div class="test-description">
+                The raise button disable functionality relies on the NetworkManager's raise tracking:
+            </div>
+            
+            <div class="debug-info">
+                <h4>NetworkManager Methods Used:</h4>
+                <div class="code-block">
+// NetworkManager.js - Raise tracking methods
+getRaiseInfo() {
+    if (!this.gameState) return { currentRaises: 0, maxRaises: 3 };
+    return {
+        currentRaises: this.gameState.currentRaisesInRound || 0,
+        maxRaises: this.gameState.maxRaisesPerRound || 3
+    };
+}
+
+canRaise() {
+    const raiseInfo = this.getRaiseInfo();
+    return raiseInfo.currentRaises < raiseInfo.maxRaises;
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Next Steps</h2>
+            <div class="test-description">
+                After verifying the raise button disable functionality:
+            </div>
+            
+            <div class="success">
+                <strong>If Raise Button Disable Works:</strong>
+                <ul>
+                    <li>Test in different game phases and scenarios</li>
+                    <li>Verify with different numbers of players</li>
+                    <li>Test edge cases and reconnection scenarios</li>
+                    <li>Monitor for any performance impacts</li>
+                </ul>
+            </div>
+            
+            <div class="error">
+                <strong>If Issues Persist:</strong>
+                <ul>
+                    <li>Check server-side raise tracking implementation</li>
+                    <li>Verify game state synchronization</li>
+                    <li>Review button event handler setup</li>
+                    <li>Check for timing issues in button state updates</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

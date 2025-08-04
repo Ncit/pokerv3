@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Environment Test</title>
+</head>
+<body>
+    <h1>Environment Config Test</h1>
+    <div id="output"></div>
+
+    <script type="module">
+        import { EnvironmentConfig } from './client/src/config/EnvironmentConfig.js';
+        
+        const output = document.getElementById('output');
+        
+        try {
+            // Test constructor
+            const config = new EnvironmentConfig();
+            output.innerHTML += '<p style="color: green;">✅ Constructor works!</p>';
+            
+            // Test global objects
+            if (window.gameConfig) {
+                output.innerHTML += '<p style="color: green;">✅ window.gameConfig created!</p>';
+                output.innerHTML += `<p>Environment: ${window.gameConfig.getEnvironment()}</p>`;
+            } else {
+                output.innerHTML += '<p style="color: red;">❌ window.gameConfig not found</p>';
+            }
+            
+            if (window.isDebug !== undefined) {
+                output.innerHTML += `<p style="color: green;">✅ window.isDebug = ${window.isDebug}</p>`;
+            } else {
+                output.innerHTML += '<p style="color: red;">❌ window.isDebug not set</p>';
+            }
+            
+        } catch (error) {
+            output.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            console.error('Full error:', error);
+        }
+    </script>
+</body>
+</html> 

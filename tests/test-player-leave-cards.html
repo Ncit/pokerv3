@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Leave Cards Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #040218;
+            color: white;
+        }
+        .test-section {
+            background-color: #1a1a2e;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success {
+            background-color: #4CAF50;
+        }
+        .status.error {
+            background-color: #f44336;
+        }
+        .status.info {
+            background-color: #2196F3;
+        }
+        .log {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .instructions {
+            background-color: #2a2a4e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Player Leave Cards Test</h1>
+    
+    <div class="instructions">
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Start the server: <code>cd pokerv2/server && npm run dev</code></li>
+            <li>Open this test page in multiple browser tabs/windows</li>
+            <li>Join the game from each tab (each represents a different player)</li>
+            <li>Click "Ready" in each tab to start the game</li>
+            <li>Wait for cards to be dealt</li>
+            <li>Close one of the browser tabs (simulating player disconnect)</li>
+            <li>Check that the disconnected player's cards are removed from the remaining tabs</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>Connection Status</h3>
+        <div id="connectionStatus" class="status info">Not connected</div>
+        <button id="connectBtn" class="test-button">Connect to Server</button>
+        <button id="disconnectBtn" class="test-button" disabled>Disconnect</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Game Actions</h3>
+        <button id="joinBtn" class="test-button" disabled>Join Game</button>
+        <button id="readyBtn" class="test-button" disabled>Set Ready</button>
+        <button id="startBtn" class="test-button" disabled>Start Game</button>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Results</h3>
+        <div id="testResults" class="status info">Waiting for test to begin...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>Event Log</h3>
+        <div id="eventLog" class="log"></div>
+        <button id="clearLogBtn" class="test-button">Clear Log</button>
+    </div>
+
+    <script>
+        let socket = null;
+        let gameState = null;
+        let playerId = null;
+        let isConnected = false;
+        let testResults = [];
+
+        // Test player data
+        const testPlayers = [
+            { name: 'Test Player 1', avatarUrl: 'https://gravatar.com/avatar/1?s=400&d=robohash&r=x' },
+            { name: 'Test Player 2', avatarUrl: 'https://gravatar.com/avatar/2?s=400&d=robohash&r=x' },
+            { name: 'Test Player 3', avatarUrl: 'https://gravatar.com/avatar/3?s=400&d=robohash&r=x' }
+        ];
+
+        // Get random test player
+        const currentPlayer = testPlayers[Math.floor(Math.random() * testPlayers.length)];
+
+        function log(message) {
+            const logElement = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function updateTestResults(message, type = 'info') {
+            const resultsElement = document.getElementById('testResults');
+            resultsElement.textContent = message;
+            resultsElement.className = `status ${type}`;
+        }
+
+        function addTestResult(result) {
+            testResults.push(result);
+            log(`✅ Test Result: ${result}`);
+        }
+
+        // Socket event handlers
+        function setupSocketListeners() {
+            socket.on('connect', () => {
+                isConnected = true;
+                updateStatus('Connected to server', 'success');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('joinBtn').disabled = false;
+                log('Connected to server');
+            });
+
+            socket.on('disconnect', () => {
+                isConnected = false;
+                updateStatus('Disconnected from server', 'error');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('joinBtn').disabled = true;
+                document.getElementById('readyBtn').disabled = true;
+                document.getElementById('startBtn').disabled = true;
+                log('Disconnected from server');
+            });
+
+            socket.on('gameJoined', (data) => {
+                gameState = data.gameState;
+                playerId = data.playerId;
+                log(`Joined game as ${currentPlayer.name} (ID: ${playerId})`);
+                log(`Game state: ${JSON.stringify(data.gameState, null, 2)}`);
+                
+                if (gameState.status === 'lobby') {
+                    document.getElementById('readyBtn').disabled = false;
+                    log('Game is in lobby - ready to set ready status');
+                }
+            });
+
+            socket.on('gameStateUpdate', (data) => {
+                gameState = data.gameState;
+                log(`Game state updated: ${data.gameState.status} - Phase: ${data.gameState.phase}`);
+                
+                if (data.gameStarted) {
+                    log('🎮 Game started!');
+                    addTestResult('Game started successfully');
+                }
+                
+                if (data.newHand) {
+                    log('🃏 New hand dealt');
+                    addTestResult('Cards dealt to players');
+                }
+                
+                if (data.roomReset) {
+                    log('🔄 Room reset');
+                    addTestResult('Room reset completed');
+                }
+                
+                // Check if cards are present
+                if (gameState.players) {
+                    const playersWithCards = gameState.players.filter(p => p.hand && p.hand.length > 0);
+                    log(`Players with cards: ${playersWithCards.length}/${gameState.players.length}`);
+                }
+            });
+
+            socket.on('playerJoined', (data) => {
+                log(`Player joined: ${data.player.name}`);
+                addTestResult(`Player ${data.player.name} joined`);
+            });
+
+            socket.on('playerLeft', (data) => {
+                log(`Player left: ${data.playerName} (ID: ${data.playerId})`);
+                if (data.removeCards) {
+                    log('🗑️ Cards should be removed for this player');
+                    addTestResult(`Cards removed for ${data.playerName}`);
+                }
+                addTestResult(`Player ${data.playerName} left the game`);
+            });
+
+            socket.on('error', (data) => {
+                log(`❌ Error: ${data.message}`);
+                updateTestResults(`Error: ${data.message}`, 'error');
+            });
+        }
+
+        // Button event handlers
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            log('Connecting to server...');
+            socket = io('http://localhost:3000');
+            setupSocketListeners();
+        });
+
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            if (!socket || !isConnected) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            const playerData = {
+                name: currentPlayer.name,
+                avatarUrl: currentPlayer.avatarUrl,
+                bank: 1000,
+                vk_user_id: Math.floor(Math.random() * 1000000)
+            };
+
+            log(`Joining game as ${playerData.name}...`);
+            socket.emit('joinGame', playerData);
+        });
+
+        document.getElementById('readyBtn').addEventListener('click', () => {
+            if (!socket || !isConnected) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            log('Setting ready status...');
+            socket.emit('setReady', true);
+            document.getElementById('readyBtn').disabled = true;
+        });
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!socket || !isConnected) {
+                log('❌ Not connected to server');
+                return;
+            }
+
+            log('Starting game...');
+            socket.emit('startGame');
+        });
+
+        document.getElementById('clearLogBtn').addEventListener('click', () => {
+            document.getElementById('eventLog').textContent = '';
+        });
+
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            log('Page loaded - ready to test player leave card removal');
+            updateTestResults('Ready to test - connect to server and join game', 'info');
+        });
+
+        // Handle page unload (simulate player disconnect)
+        window.addEventListener('beforeunload', () => {
+            if (socket && isConnected) {
+                log('Page closing - simulating player disconnect');
+                // The disconnect event will be handled by the server
+            }
+        });
+    </script>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</body>
+</html> 

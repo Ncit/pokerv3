@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Error Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .info-panel {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success { background: #28a745; }
+        .button.success:hover { background: #1e7e34; }
+        .button.warning { background: #ffc107; color: #000; }
+        .button.warning:hover { background: #e0a800; }
+        .button.danger { background: #dc3545; }
+        .button.danger:hover { background: #c82333; }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .error-details {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .console-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Telegram Error Diagnostic</h1>
+        
+        <div class="info-panel">
+            <h3>Diagnostic Overview</h3>
+            <p>This tool will help identify and fix Telegram integration errors.</p>
+            <p>Run the diagnostic tests below to get detailed error information.</p>
+        </div>
+
+        <h2>🔍 Environment Analysis</h2>
+        <div id="environment-analysis">
+            <div class="status warning">
+                <strong>Loading...</strong> Analyzing environment...
+            </div>
+        </div>
+
+        <h2>📱 Telegram Integration Test</h2>
+        <div id="telegram-test">
+            <div class="status warning">
+                <strong>Ready to test...</strong> Click "Run Telegram Test" to start
+            </div>
+        </div>
+
+        <h2>🧪 Diagnostic Controls</h2>
+        <div>
+            <button class="button" onclick="runEnvironmentAnalysis()">Analyze Environment</button>
+            <button class="button warning" onclick="runTelegramTest()">Run Telegram Test</button>
+            <button class="button success" onclick="testGameIntegration()">Test Game Integration</button>
+            <button class="button danger" onclick="clearConsole()">Clear Console</button>
+            <button class="button info" onclick="exportDiagnostic()">Export Diagnostic</button>
+        </div>
+
+        <h2>📊 Console Output</h2>
+        <div id="console-output" class="console-output">
+            Ready for diagnostic output...
+        </div>
+
+        <h2>🔧 Error Details</h2>
+        <div id="error-details" class="error-details">
+            <p>No errors detected yet. Run the diagnostic tests above.</p>
+        </div>
+
+        <h2>💡 Common Solutions</h2>
+        <div class="info-panel">
+            <h3>Frequently Encountered Issues</h3>
+            <ul>
+                <li><strong>Telegram WebApp not available:</strong> Normal when testing outside Telegram</li>
+                <li><strong>ready() method error:</strong> May not be available in all Telegram versions</li>
+                <li><strong>expand() method error:</strong> May not be available in all Telegram versions</li>
+                <li><strong>User data missing:</strong> Telegram may not provide user data in some contexts</li>
+                <li><strong>Import errors:</strong> Check file paths and module structure</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Error Diagnostic
+        class TelegramErrorDiagnostic {
+            constructor() {
+                this.consoleOutput = document.getElementById('console-output');
+                this.errorDetails = document.getElementById('error-details');
+                this.errors = [];
+                this.setupConsoleCapture();
+            }
+
+            setupConsoleCapture() {
+                const originalLog = console.log;
+                const originalWarn = console.warn;
+                const originalError = console.error;
+
+                console.log = (...args) => {
+                    originalLog.apply(console, args);
+                    this.addToConsole('LOG', args);
+                };
+
+                console.warn = (...args) => {
+                    originalWarn.apply(console, args);
+                    this.addToConsole('WARN', args);
+                };
+
+                console.error = (...args) => {
+                    originalError.apply(console, args);
+                    this.addToConsole('ERROR', args);
+                    this.addError(args);
+                };
+            }
+
+            addToConsole(level, args) {
+                const timestamp = new Date().toLocaleTimeString();
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                
+                this.consoleOutput.innerHTML += `[${timestamp}] ${level}: ${message}\n`;
+                this.consoleOutput.scrollTop = this.consoleOutput.scrollHeight;
+            }
+
+            addError(args) {
+                const error = {
+                    timestamp: new Date().toISOString(),
+                    message: args.map(arg => String(arg)).join(' '),
+                    stack: new Error().stack
+                };
+                this.errors.push(error);
+                this.updateErrorDetails();
+            }
+
+            updateErrorDetails() {
+                if (this.errors.length === 0) {
+                    this.errorDetails.innerHTML = '<p>No errors detected.</p>';
+                    return;
+                }
+
+                let html = '<h3>Detected Errors:</h3>';
+                this.errors.forEach((error, index) => {
+                    html += `
+                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                            <strong>Error ${index + 1}:</strong> ${error.message}<br>
+                            <small>Time: ${new Date(error.timestamp).toLocaleString()}</small>
+                        </div>
+                    `;
+                });
+                this.errorDetails.innerHTML = html;
+            }
+
+            async runEnvironmentAnalysis() {
+                const analysisDiv = document.getElementById('environment-analysis');
+                
+                console.log('🔍 Starting Environment Analysis...');
+                
+                const analysis = {
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    searchParams: window.location.search,
+                    hash: window.location.hash,
+                    telegramAvailable: typeof window.Telegram !== 'undefined',
+                    telegramWebApp: typeof window.Telegram?.WebApp !== 'undefined',
+                    vkBridgeAvailable: typeof window.vkBridge !== 'undefined',
+                    gameConfig: window.gameConfig ? 'Available' : 'Not Available',
+                    appData: window.appData ? 'Available' : 'Not Available'
+                };
+
+                console.log('📊 Environment Analysis:', analysis);
+
+                let status = 'info';
+                let message = 'Environment analyzed successfully';
+
+                if (!analysis.telegramAvailable) {
+                    status = 'warning';
+                    message = 'Telegram object not available (expected in browser testing)';
+                } else if (!analysis.telegramWebApp) {
+                    status = 'warning';
+                    message = 'Telegram WebApp not available (expected in browser testing)';
+                }
+
+                analysisDiv.innerHTML = `
+                    <div class="status ${status}">
+                        <strong>🌐 Environment Analysis Complete</strong><br>
+                        ${message}<br>
+                        <div class="data-display">${JSON.stringify(analysis, null, 2)}</div>
+                    </div>
+                `;
+            }
+
+            async runTelegramTest() {
+                const testDiv = document.getElementById('telegram-test');
+                
+                console.log('🧪 Starting Telegram Integration Test...');
+                
+                try {
+                    // Test 1: Import telegramlogic.js
+                    console.log('📦 Testing telegramlogic.js import...');
+                    const telegramModule = await import('./src/scripts/telegramlogic.js');
+                    console.log('✅ telegramlogic.js imported successfully');
+                    console.log('📦 Available exports:', Object.keys(telegramModule));
+
+                    // Test 2: Test initTelegramWebApp
+                    console.log('🔧 Testing initTelegramWebApp...');
+                    const initResult = telegramModule.initTelegramWebApp();
+                    console.log('📱 initTelegramWebApp result:', initResult);
+
+                    // Test 3: Test setupTelegramApp
+                    console.log('🔧 Testing setupTelegramApp...');
+                    let setupResult = null;
+                    telegramModule.setupTelegramApp((appData) => {
+                        setupResult = appData;
+                        console.log('📱 setupTelegramApp callback received:', appData);
+                    });
+                    console.log('📱 setupTelegramApp called');
+
+                    // Test 4: Test other functions
+                    console.log('🔧 Testing other Telegram functions...');
+                    telegramModule.hideTelegramMainButton();
+                    telegramModule.hideTelegramBackButton();
+                    console.log('✅ Other functions tested successfully');
+
+                    testDiv.innerHTML = `
+                        <div class="status success">
+                            <strong>✅ Telegram Integration Test Complete</strong><br>
+                            All tests passed successfully<br>
+                            Init Result: ${initResult}<br>
+                            Setup Result: ${setupResult ? 'Callback received' : 'No callback'}
+                        </div>
+                    `;
+
+                } catch (error) {
+                    console.error('❌ Telegram Integration Test Failed:', error);
+                    
+                    testDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>❌ Telegram Integration Test Failed</strong><br>
+                            Error: ${error.message}<br>
+                            Stack: ${error.stack}
+                        </div>
+                    `;
+                }
+            }
+
+            async testGameIntegration() {
+                console.log('🎮 Testing Game Integration...');
+                
+                try {
+                    // Test LoadingScene import
+                    console.log('📦 Testing LoadingScene import...');
+                    const loadingModule = await import('./src/scenes/LoadingScene.js');
+                    console.log('✅ LoadingScene imported successfully');
+
+                    // Test LobbyScene import
+                    console.log('📦 Testing LobbyScene import...');
+                    const lobbyModule = await import('./src/scenes/LobbyScene.js');
+                    console.log('✅ LobbyScene imported successfully');
+
+                    console.log('✅ Game Integration Test Complete');
+
+                } catch (error) {
+                    console.error('❌ Game Integration Test Failed:', error);
+                }
+            }
+
+            exportDiagnostic() {
+                const diagnostic = {
+                    timestamp: new Date().toISOString(),
+                    environment: {
+                        userAgent: navigator.userAgent,
+                        url: window.location.href,
+                        telegramAvailable: typeof window.Telegram !== 'undefined',
+                        telegramWebApp: typeof window.Telegram?.WebApp !== 'undefined'
+                    },
+                    errors: this.errors,
+                    consoleOutput: this.consoleOutput.textContent
+                };
+
+                const blob = new Blob([JSON.stringify(diagnostic, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `telegram-diagnostic-${new Date().toISOString().slice(0, 19)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Global diagnostic instance
+        let diagnostic = null;
+
+        // Test functions
+        function runEnvironmentAnalysis() {
+            if (!diagnostic) diagnostic = new TelegramErrorDiagnostic();
+            diagnostic.runEnvironmentAnalysis();
+        }
+
+        function runTelegramTest() {
+            if (!diagnostic) diagnostic = new TelegramErrorDiagnostic();
+            diagnostic.runTelegramTest();
+        }
+
+        function testGameIntegration() {
+            if (!diagnostic) diagnostic = new TelegramErrorDiagnostic();
+            diagnostic.testGameIntegration();
+        }
+
+        function clearConsole() {
+            if (diagnostic) {
+                diagnostic.consoleOutput.innerHTML = 'Console cleared...\n';
+                diagnostic.errors = [];
+                diagnostic.updateErrorDetails();
+            }
+        }
+
+        function exportDiagnostic() {
+            if (diagnostic) {
+                diagnostic.exportDiagnostic();
+            }
+        }
+
+        // Initialize diagnostic when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            diagnostic = new TelegramErrorDiagnostic();
+            console.log('🔧 Telegram Error Diagnostic initialized');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Player Leave Reset - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #4CAF50;
+        }
+        .status.error {
+            background-color: #f44336;
+        }
+        .status.info {
+            background-color: #2196F3;
+        }
+        .status.warning {
+            background-color: #ff9800;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+        }
+        .instructions {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 4px;
+        }
+        .test-scenario {
+            background-color: #3a3a3a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Test Player Leave Reset - Multiplayer Poker</h1>
+        
+        <div class="test-section">
+            <h2>Test Instructions</h2>
+            <div class="instructions">
+                <p><strong>Objective:</strong> Verify that when a player leaves the room, the room state is reset and all cards are hidden.</p>
+                
+                <div class="test-scenario">
+                    <h3>Scenario 1: Player Leaves During Lobby</h3>
+                    <div class="step">
+                        <strong>Step 1:</strong> Open 3 game instances (use "Open Multiple Tabs" button)
+                    </div>
+                    <div class="step">
+                        <strong>Step 2:</strong> Have all players click "Ready"
+                    </div>
+                    <div class="step">
+                        <strong>Step 3:</strong> Close one of the game tabs
+                    </div>
+                    <div class="step">
+                        <strong>Step 4:</strong> Verify that remaining players see "Игрок покинул игру. Комната сброшена." message
+                    </div>
+                    <div class="step">
+                        <strong>Step 5:</strong> Verify that room returns to lobby state with ready buttons visible
+                    </div>
+                </div>
+                
+                <div class="test-scenario">
+                    <h3>Scenario 2: Player Leaves During Active Game</h3>
+                    <div class="step">
+                        <strong>Step 1:</strong> Open 3 game instances and start a game
+                    </div>
+                    <div class="step">
+                        <strong>Step 2:</strong> Let the game progress to see cards dealt
+                    </div>
+                    <div class="step">
+                        <strong>Step 3:</strong> Close one of the game tabs during active play
+                    </div>
+                    <div class="step">
+                        <strong>Step 4:</strong> Verify that remaining players see the reset message
+                    </div>
+                    <div class="step">
+                        <strong>Step 5:</strong> Verify that all cards are hidden and room returns to lobby
+                    </div>
+                </div>
+                
+                <div class="test-scenario">
+                    <h3>Scenario 3: Player Leaves During Showdown</h3>
+                    <div class="step">
+                        <strong>Step 1:</strong> Play a hand to showdown
+                    </div>
+                    <div class="step">
+                        <strong>Step 2:</strong> Close one tab during showdown (before clicking "Next Round")
+                    </div>
+                    <div class="step">
+                        <strong>Step 3:</strong> Verify that remaining players see reset message and cards are hidden
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Game Interface</h2>
+            <div id="status" class="status info">
+                Ready to test player leave reset functionality
+            </div>
+            
+            <button class="test-button" onclick="openGame()">🎮 Open Single Game</button>
+            <button class="test-button" onclick="openMultipleTabs()">🔄 Open Multiple Tabs (3)</button>
+            <button class="test-button" onclick="openManyTabs()">👥 Open Many Tabs (5)</button>
+            <button class="test-button" onclick="clearStatus()">🗑️ Clear Status</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Expected Behavior</h2>
+            <ul>
+                <li>✅ When a player leaves, remaining players see reset notification</li>
+                <li>✅ All cards are immediately hidden when player leaves</li>
+                <li>✅ Room returns to lobby state</li>
+                <li>✅ Ready buttons become visible again</li>
+                <li>✅ Community cards are cleared</li>
+                <li>✅ Hand rank display is cleared</li>
+                <li>✅ Next Round button is hidden</li>
+                <li>✅ Game can be restarted with remaining players</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="testResults">
+                <p>No tests run yet. Open multiple game instances and follow the test scenarios above.</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Debug Information</h2>
+            <div id="debugInfo">
+                <p>Server status: <span id="serverStatus">Checking...</span></p>
+                <p>Active connections: <span id="activeConnections">-</span></p>
+                <p>Last event: <span id="lastEvent">None</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function clearStatus() {
+            updateStatus('Status cleared', 'info');
+        }
+
+        function updateDebugInfo(field, value) {
+            const element = document.getElementById(field);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        function openGame() {
+            const gameWindow = window.open('index.html', '_blank', 'width=1280,height=720');
+            
+            if (gameWindow) {
+                updateStatus('Single game opened. Use this for testing basic functionality.', 'success');
+            } else {
+                updateStatus('Failed to open game window. Please allow popups.', 'error');
+            }
+        }
+
+        function openMultipleTabs() {
+            const tabs = 3;
+            let openedCount = 0;
+            
+            for (let i = 0; i < tabs; i++) {
+                const gameWindow = window.open('index.html', `game_${i}`, 'width=1280,height=720');
+                if (gameWindow) {
+                    openedCount++;
+                }
+            }
+            
+            if (openedCount > 0) {
+                updateStatus(`Opened ${openedCount} game tabs. Test player leave scenarios.`, 'success');
+                updateDebugInfo('activeConnections', openedCount);
+            } else {
+                updateStatus('Failed to open game tabs. Please allow popups.', 'error');
+            }
+        }
+
+        function openManyTabs() {
+            const tabs = 5;
+            let openedCount = 0;
+            
+            for (let i = 0; i < tabs; i++) {
+                const gameWindow = window.open('index.html', `game_many_${i}`, 'width=1280,height=720');
+                if (gameWindow) {
+                    openedCount++;
+                }
+            }
+            
+            if (openedCount > 0) {
+                updateStatus(`Opened ${openedCount} game tabs. Test with more players.`, 'success');
+                updateDebugInfo('activeConnections', openedCount);
+            } else {
+                updateStatus('Failed to open game tabs. Please allow popups.', 'error');
+            }
+        }
+
+        // Check server status
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:3000/api/games');
+                if (response.ok) {
+                    const games = await response.json();
+                    updateDebugInfo('serverStatus', 'Running');
+                    updateDebugInfo('lastEvent', `Found ${games.length} game(s)`);
+                } else {
+                    updateDebugInfo('serverStatus', 'Error');
+                    updateDebugInfo('lastEvent', `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                updateDebugInfo('serverStatus', 'Not responding');
+                updateDebugInfo('lastEvent', error.message);
+            }
+        }
+
+        // Add some helpful tips
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Test page loaded. Click "Open Multiple Tabs" to start testing player leave scenarios.', 'info');
+            
+            // Check server status periodically
+            checkServerStatus();
+            setInterval(checkServerStatus, 5000);
+        });
+    </script>
+</body>
+</html> 

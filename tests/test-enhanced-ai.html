@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced AI Bot Test - Poker Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .ai-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .ai-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .ai-card:hover {
+            border-color: #FFD700;
+            transform: translateY(-5px);
+        }
+        .ai-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .ai-description {
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        .ai-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .stat {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .game-container {
+            text-align: center;
+        }
+        .start-button {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        .features {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .features h3 {
+            color: #FFD700;
+            margin-bottom: 15px;
+        }
+        .features ul {
+            text-align: left;
+            line-height: 1.6;
+        }
+        .features li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Enhanced AI Bot Poker Game</h1>
+            <p>Experience 4 distinct AI personalities with unique playing styles and strategies</p>
+        </div>
+
+        <div class="ai-info">
+            <h2>🤖 AI Personalities Overview</h2>
+            <p>Each AI bot has unique personality traits that influence their decision-making, betting patterns, and playing style.</p>
+        </div>
+
+        <div class="ai-grid">
+            <div class="ai-card">
+                <div class="ai-name">🎯 Tight Aggressive</div>
+                <div class="ai-description">
+                    Plays few hands but bets aggressively when they do. High patience, low looseness, strategic bluffer.
+                </div>
+                <div class="ai-stats">
+                    <div class="stat">Aggression: 80%</div>
+                    <div class="stat">Looseness: 20%</div>
+                    <div class="stat">Bluff Rate: 10%</div>
+                    <div class="stat">Patience: 90%</div>
+                </div>
+            </div>
+
+            <div class="ai-card">
+                <div class="ai-name">🐟 Loose Passive</div>
+                <div class="ai-description">
+                    Plays many hands but rarely raises. Low aggression, high looseness, calls frequently.
+                </div>
+                <div class="ai-stats">
+                    <div class="stat">Aggression: 20%</div>
+                    <div class="stat">Looseness: 80%</div>
+                    <div class="stat">Bluff Rate: 5%</div>
+                    <div class="stat">Patience: 30%</div>
+                </div>
+            </div>
+
+            <div class="ai-card">
+                <div class="ai-name">🎭 Manic Bluffer</div>
+                <div class="ai-description">
+                    Highly aggressive with frequent bluffs. Low patience, high risk tolerance, unpredictable.
+                </div>
+                <div class="ai-stats">
+                    <div class="stat">Aggression: 90%</div>
+                    <div class="stat">Looseness: 70%</div>
+                    <div class="stat">Bluff Rate: 40%</div>
+                    <div class="stat">Patience: 10%</div>
+                </div>
+            </div>
+
+            <div class="ai-card">
+                <div class="ai-name">🪨 Solid Rock</div>
+                <div class="ai-description">
+                    Very selective, only plays premium hands. High patience, low risk tolerance, consistent.
+                </div>
+                <div class="ai-stats">
+                    <div class="stat">Aggression: 30%</div>
+                    <div class="stat">Looseness: 10%</div>
+                    <div class="stat">Bluff Rate: 2%</div>
+                    <div class="stat">Patience: 95%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <button class="start-button" onclick="startGame()">🚀 Start Enhanced AI Game</button>
+        </div>
+
+        <div class="features">
+            <h3>✨ Enhanced Features</h3>
+            <ul>
+                <li><strong>Personality-Based Decision Making:</strong> Each AI considers their unique traits when making decisions</li>
+                <li><strong>Dynamic Bet Sizing:</strong> AI personalities influence how much they bet and when</li>
+                <li><strong>Position Awareness:</strong> AIs adjust their strategy based on their position at the table</li>
+                <li><strong>Bluffing Patterns:</strong> Each AI has different bluffing frequencies and triggers</li>
+                <li><strong>Hand Strength Evaluation:</strong> Sophisticated preflop and postflop hand evaluation</li>
+                <li><strong>Performance Tracking:</strong> Monitor win rates and playing statistics for each AI</li>
+                <li><strong>Visual Indicators:</strong> Color-coded avatars and personality icons for easy identification</li>
+                <li><strong>Thinking Time:</strong> Different AI personalities think at different speeds</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function startGame() {
+            // Set debug mode to false for production
+            window.isDebug = false;
+            
+            // Mock app data for testing
+            window.appData = {
+                first_name: 'Test Player',
+                vk_user_id: 12345,
+            };
+            
+            // Redirect to the main game
+            window.location.href = 'index.html';
+        }
+
+        // Add some interactive effects
+        document.querySelectorAll('.ai-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html> 

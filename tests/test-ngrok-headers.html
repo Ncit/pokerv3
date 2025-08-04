@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ngrok Headers Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Ngrok Headers Test</h1>
+        <p>This page tests that ngrok headers are properly added to network requests.</p>
+        
+        <div class="test-section">
+            <h3>Test 1: Socket.IO Connection</h3>
+            <p>Test Socket.IO connection with ngrok headers:</p>
+            <button onclick="testSocketConnection()">Test Socket.IO</button>
+            <div id="socket-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: Fetch Request</h3>
+            <p>Test fetch request with ngrok headers:</p>
+            <button onclick="testFetchRequest()">Test Fetch</button>
+            <div id="fetch-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 3: Manual Fetch with Headers</h3>
+            <p>Test manual fetch with ngrok headers:</p>
+            <button onclick="testManualFetch()">Test Manual Fetch</button>
+            <div id="manual-fetch-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 4: Check Global Headers</h3>
+            <p>Check if global ngrok headers are enabled:</p>
+            <button onclick="checkGlobalHeaders()">Check Global Headers</button>
+            <div id="global-headers-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Network Request Log</h3>
+            <div id="network-log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the ngrok utilities
+        import { fetchWithNgrokHeaders, getNgrokHeaders, enableGlobalNgrokHeaders } from './client/src/utils/NgrokUtils.js';
+        
+        // Enable global ngrok headers
+        enableGlobalNgrokHeaders();
+        
+        // Make functions available globally for button clicks
+        window.testSocketConnection = async function() {
+            const resultDiv = document.getElementById('socket-result');
+            resultDiv.innerHTML = '<p class="info">Testing Socket.IO connection...</p>';
+            
+            try {
+                // Import socket.io dynamically
+                const { io } = await import('https://cdn.socket.io/4.7.2/socket.io.esm.min.js');
+                
+                // Create socket with ngrok headers
+                const socket = io('http://localhost:3000', {
+                    extraHeaders: {
+                        'ngrok-skip-browser-warning': '69420'
+                    }
+                });
+                
+                socket.on('connect', () => {
+                    resultDiv.innerHTML = '<p class="success">✅ Socket.IO connected successfully with ngrok headers!</p>';
+                    socket.disconnect();
+                });
+                
+                socket.on('connect_error', (error) => {
+                    resultDiv.innerHTML = `<p class="error">❌ Socket.IO connection failed: ${error.message}</p>`;
+                });
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        };
+        
+        window.testFetchRequest = async function() {
+            const resultDiv = document.getElementById('fetch-result');
+            resultDiv.innerHTML = '<p class="info">Testing fetch request...</p>';
+            
+            try {
+                // This should automatically include ngrok headers due to global override
+                const response = await fetch('http://localhost:3000/api/game');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Fetch request successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                logNetworkRequest('fetch', 'http://localhost:3000/api/game', 'success');
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Fetch request failed: ${error.message}</p>`;
+                logNetworkRequest('fetch', 'http://localhost:3000/api/game', 'error', error.message);
+            }
+        };
+        
+        window.testManualFetch = async function() {
+            const resultDiv = document.getElementById('manual-fetch-result');
+            resultDiv.innerHTML = '<p class="info">Testing manual fetch with headers...</p>';
+            
+            try {
+                const response = await fetchWithNgrokHeaders('http://localhost:3000/api/game');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Manual fetch with headers successful!</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                logNetworkRequest('manual-fetch', 'http://localhost:3000/api/game', 'success');
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Manual fetch failed: ${error.message}</p>`;
+                logNetworkRequest('manual-fetch', 'http://localhost:3000/api/game', 'error', error.message);
+            }
+        };
+        
+        window.checkGlobalHeaders = function() {
+            const resultDiv = document.getElementById('global-headers-result');
+            
+            const headers = getNgrokHeaders();
+            const hasGlobalOverride = window.fetch !== window._originalFetch;
+            
+            resultDiv.innerHTML = `
+                <p class="success">✅ Ngrok headers configuration:</p>
+                <pre>${JSON.stringify(headers, null, 2)}</pre>
+                <p class="${hasGlobalOverride ? 'success' : 'error'}">
+                    ${hasGlobalOverride ? '✅' : '❌'} Global fetch override: ${hasGlobalOverride ? 'ENABLED' : 'DISABLED'}
+                </p>
+            `;
+        };
+        
+        function logNetworkRequest(type, url, status, error = null) {
+            const logDiv = document.getElementById('network-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `
+                <p><strong>[${timestamp}]</strong> ${type.toUpperCase()}: ${url} - 
+                <span class="${status === 'success' ? 'success' : 'error'}">${status.toUpperCase()}</span>
+                ${error ? `<br><span class="error">Error: ${error}</span>` : ''}
+                </p>
+            `;
+            logDiv.appendChild(logEntry);
+        }
+        
+        // Auto-run global headers check on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.checkGlobalHeaders();
+            }, 100);
+        });
+    </script>
+</body>
+</html> 

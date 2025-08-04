@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hidden Cards - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #4CAF50;
+        }
+        .status.error {
+            background-color: #f44336;
+        }
+        .status.info {
+            background-color: #2196F3;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+        }
+        .instructions {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Test Hidden Cards - Multiplayer Poker</h1>
+        
+        <div class="test-section">
+            <h2>Test Instructions</h2>
+            <div class="instructions">
+                <p><strong>Objective:</strong> Verify that player cards are hidden until the game starts and players are in the room.</p>
+                
+                <div class="step">
+                    <strong>Step 1:</strong> Open the game in multiple browser tabs/windows
+                </div>
+                
+                <div class="step">
+                    <strong>Step 2:</strong> Verify that no cards are visible when players join the lobby
+                </div>
+                
+                <div class="step">
+                    <strong>Step 3:</strong> Click "Ready" for all players
+                </div>
+                
+                <div class="step">
+                    <strong>Step 4:</strong> Click "Start Game" and verify that cards appear only after the game starts
+                </div>
+                
+                <div class="step">
+                    <strong>Step 5:</strong> Test that cards are hidden again when returning to lobby
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Game Interface</h2>
+            <div id="status" class="status info">
+                Ready to test hidden cards functionality
+            </div>
+            
+            <button class="test-button" onclick="openGame()">🎮 Open Game</button>
+            <button class="test-button" onclick="openMultipleTabs()">🔄 Open Multiple Tabs</button>
+            <button class="test-button" onclick="clearStatus()">🗑️ Clear Status</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Expected Behavior</h2>
+            <ul>
+                <li>✅ No cards visible when players join lobby</li>
+                <li>✅ Cards only appear after clicking "Start Game"</li>
+                <li>✅ Cards are hidden again when returning to lobby</li>
+                <li>✅ Only the current player's cards are face-up</li>
+                <li>✅ Other players' cards are face-down</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="testResults">
+                <p>No tests run yet. Open the game and follow the instructions above.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function clearStatus() {
+            updateStatus('Status cleared', 'info');
+        }
+
+        function openGame() {
+            // Open the game in a new window
+            const gameWindow = window.open('index.html', '_blank', 'width=1280,height=720');
+            
+            if (gameWindow) {
+                updateStatus('Game opened in new window. Check that no cards are visible in lobby.', 'success');
+            } else {
+                updateStatus('Failed to open game window. Please allow popups.', 'error');
+            }
+        }
+
+        function openMultipleTabs() {
+            // Open multiple tabs for testing
+            const tabs = 3;
+            let openedCount = 0;
+            
+            for (let i = 0; i < tabs; i++) {
+                const gameWindow = window.open('index.html', `game_${i}`, 'width=1280,height=720');
+                if (gameWindow) {
+                    openedCount++;
+                }
+            }
+            
+            if (openedCount > 0) {
+                updateStatus(`Opened ${openedCount} game tabs. Test with different players.`, 'success');
+            } else {
+                updateStatus('Failed to open game tabs. Please allow popups.', 'error');
+            }
+        }
+
+        // Add some helpful tips
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Test page loaded. Click "Open Game" to start testing hidden cards functionality.', 'info');
+        });
+    </script>
+</body>
+</html> 

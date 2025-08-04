@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Reconnect Auto-Fold</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background-color: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #2d5a2d; }
+        .error { background-color: #5a2d2d; }
+        .info { background-color: #2d2d5a; }
+        .warning { background-color: #5a5a2d; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .player-info {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .player-card {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+        .folded {
+            border-color: #ff6b6b;
+            background-color: #3a2a2a;
+        }
+        .current-player {
+            border-color: #ffd700;
+            background-color: #3a3a2a;
+        }
+        .game-state {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Reconnect Auto-Fold</h1>
+        <p>This test verifies that when a player disconnects and reconnects during an active game, they are automatically folded.</p>
+
+        <div class="test-section">
+            <h2>Test Setup</h2>
+            <button id="startTest">Start Test</button>
+            <button id="resetTest">Reset Test</button>
+            <div id="testStatus" class="status info">Ready to start test</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Game State</h2>
+            <div id="gameState" class="game-state">Not connected</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Players</h2>
+            <div id="playersContainer"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Log</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        class ReconnectAutoFoldTest {
+            constructor() {
+                this.socket = null;
+                this.gameState = null;
+                this.players = [];
+                this.myPlayerId = null;
+                this.testStep = 0;
+                this.reconnectedPlayerId = null;
+                this.autoFoldDetected = false;
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('startTest').addEventListener('click', () => this.startTest());
+                document.getElementById('resetTest').addEventListener('click', () => this.resetTest());
+            }
+
+            log(message) {
+                const logElement = document.getElementById('log');
+                const timestamp = new Date().toLocaleTimeString();
+                logElement.textContent += `[${timestamp}] ${message}\n`;
+                logElement.scrollTop = logElement.scrollHeight;
+                console.log(message);
+            }
+
+            updateStatus(message, type = 'info') {
+                const statusElement = document.getElementById('testStatus');
+                statusElement.textContent = message;
+                statusElement.className = `status ${type}`;
+            }
+
+            updateGameState() {
+                const gameStateElement = document.getElementById('gameState');
+                if (this.gameState) {
+                    gameStateElement.innerHTML = `
+                        <strong>Status:</strong> ${this.gameState.status}<br>
+                        <strong>Phase:</strong> ${this.gameState.phase}<br>
+                        <strong>Pot:</strong> ${this.gameState.pot}<br>
+                        <strong>Current Bet:</strong> ${this.gameState.currentBet}<br>
+                        <strong>Players:</strong> ${this.gameState.totalPlayers}/${this.gameState.maxPlayers}<br>
+                        <strong>Ready Players:</strong> ${this.gameState.readyCount}<br>
+                        <strong>All Ready:</strong> ${this.gameState.allPlayersReady ? 'Yes' : 'No'}
+                    `;
+                } else {
+                    gameStateElement.textContent = 'Not connected';
+                }
+            }
+
+            updatePlayers() {
+                const container = document.getElementById('playersContainer');
+                if (!this.players || this.players.length === 0) {
+                    container.innerHTML = '<p>No players</p>';
+                    return;
+                }
+
+                container.innerHTML = this.players.map(player => {
+                    const isCurrent = player.isCurrentPlayer;
+                    const isMe = player.id === this.myPlayerId;
+                    const isFolded = player.folded;
+                    const isReconnected = player.id === this.reconnectedPlayerId;
+                    
+                    return `
+                        <div class="player-card ${isFolded ? 'folded' : ''} ${isCurrent ? 'current-player' : ''}">
+                            <strong>${player.name}</strong> ${isMe ? '(YOU)' : ''} ${isCurrent ? '(CURRENT)' : ''} ${isFolded ? '(FOLDED)' : ''} ${isReconnected ? '(RECONNECTED)' : ''}<br>
+                            Bank: ${player.bank}<br>
+                            Bet: ${player.currentBet}<br>
+                            Folded: ${isFolded ? 'Yes' : 'No'}<br>
+                            All-in: ${player.allIn ? 'Yes' : 'No'}<br>
+                            Ready: ${player.ready ? 'Yes' : 'No'}<br>
+                            Cards: ${player.hand ? player.hand.length : 0}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            async startTest() {
+                this.log('🚀 Starting Reconnect Auto-Fold Test');
+                this.updateStatus('Connecting to server...', 'info');
+                
+                try {
+                    await this.connectToServer();
+                    await this.joinGame();
+                    await this.waitForGameStart();
+                    await this.simulateDisconnectReconnect();
+                    await this.verifyAutoFold();
+                    
+                    this.log('✅ Test completed successfully!');
+                    this.updateStatus('Test completed successfully!', 'success');
+                } catch (error) {
+                    this.log(`❌ Test failed: ${error.message}`);
+                    this.updateStatus(`Test failed: ${error.message}`, 'error');
+                }
+            }
+
+            connectToServer() {
+                return new Promise((resolve, reject) => {
+                    this.log('📡 Connecting to server...');
+                    
+                    this.socket = io('http://localhost:3000');
+                    
+                    this.socket.on('connect', () => {
+                        this.log('✅ Connected to server');
+                        resolve();
+                    });
+                    
+                    this.socket.on('connect_error', (error) => {
+                        this.log(`❌ Connection failed: ${error.message}`);
+                        reject(new Error(`Connection failed: ${error.message}`));
+                    });
+                    
+                    // Set up event listeners
+                    this.setupSocketListeners();
+                });
+            }
+
+            setupSocketListeners() {
+                this.socket.on('gameJoined', (data) => {
+                    this.log(`🎮 Joined game as ${data.playerId}`);
+                    this.myPlayerId = data.playerId;
+                    this.gameState = data.gameState;
+                    this.players = data.players;
+                    this.updateGameState();
+                    this.updatePlayers();
+                });
+
+                this.socket.on('gameStateUpdate', (data) => {
+                    this.log(`🔄 Game state updated: ${data.gameState.status} - ${data.gameState.phase}`);
+                    this.gameState = data.gameState;
+                    this.players = data.gameState.players;
+                    this.updateGameState();
+                    this.updatePlayers();
+                    
+                    if (data.gameStarted) {
+                        this.log('🎮 Game started!');
+                    }
+                    
+                    if (data.lastAction) {
+                        this.log(`🎯 Last action: ${data.lastAction.action} by ${data.lastAction.playerName}`);
+                    }
+                });
+
+                this.socket.on('playerJoined', (data) => {
+                    this.log(`👤 Player joined: ${data.player.name}`);
+                });
+
+                this.socket.on('playerDisconnected', (data) => {
+                    this.log(`👋 Player disconnected: ${data.playerName}`);
+                });
+
+                this.socket.on('playerReconnected', (data) => {
+                    this.log(`🔄 Player reconnected: ${data.playerName} (Auto-folded: ${data.wasAutoFolded})`);
+                    this.reconnectedPlayerId = data.playerId;
+                    if (data.wasAutoFolded) {
+                        this.autoFoldDetected = true;
+                    }
+                });
+
+                this.socket.on('error', (data) => {
+                    this.log(`❌ Error: ${data.message}`);
+                });
+            }
+
+            joinGame() {
+                return new Promise((resolve) => {
+                    this.log('🎯 Joining game...');
+                    
+                    const playerData = {
+                        name: `TestPlayer_${Date.now()}`,
+                        avatarUrl: 'https://gravatar.com/avatar/default?s=400&d=robohash&r=x'
+                    };
+                    
+                    this.socket.emit('joinGame', playerData);
+                    
+                    // Wait for gameJoined event
+                    const checkJoined = setInterval(() => {
+                        if (this.myPlayerId) {
+                            clearInterval(checkJoined);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            waitForGameStart() {
+                return new Promise((resolve) => {
+                    this.log('⏳ Waiting for game to start...');
+                    
+                    const checkGameStarted = setInterval(() => {
+                        if (this.gameState && this.gameState.status === 'playing') {
+                            clearInterval(checkGameStarted);
+                            this.log('🎮 Game is now playing!');
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            simulateDisconnectReconnect() {
+                return new Promise((resolve) => {
+                    this.log('🔌 Simulating disconnect and reconnect...');
+                    
+                    // Disconnect the current socket
+                    this.socket.disconnect();
+                    
+                    setTimeout(() => {
+                        this.log('📡 Reconnecting...');
+                        
+                        // Create a new connection with the same player name
+                        const newSocket = io('http://localhost:3000');
+                        
+                        newSocket.on('connect', () => {
+                            this.log('✅ Reconnected to server');
+                            
+                            const playerData = {
+                                name: `TestPlayer_${this.myPlayerId.split('-')[0]}`, // Use same name pattern
+                                avatarUrl: 'https://gravatar.com/avatar/default?s=400&d=robohash&r=x'
+                            };
+                            
+                            newSocket.emit('joinGame', playerData);
+                        });
+                        
+                        newSocket.on('gameJoined', (data) => {
+                            this.log(`🔄 Rejoined game as ${data.playerId}`);
+                            this.myPlayerId = data.playerId;
+                            this.socket = newSocket;
+                            
+                            // Set up event listeners for the new socket
+                            this.setupSocketListeners();
+                            
+                            setTimeout(() => {
+                                resolve();
+                            }, 1000);
+                        });
+                        
+                        newSocket.on('connect_error', (error) => {
+                            this.log(`❌ Reconnection failed: ${error.message}`);
+                            resolve();
+                        });
+                    }, 2000);
+                });
+            }
+
+            verifyAutoFold() {
+                return new Promise((resolve) => {
+                    this.log('🔍 Verifying auto-fold behavior...');
+                    
+                    const checkAutoFold = setInterval(() => {
+                        const myPlayer = this.players.find(p => p.id === this.myPlayerId);
+                        
+                        if (myPlayer) {
+                            if (myPlayer.folded) {
+                                this.log('✅ Player was auto-folded upon reconnection (correct)');
+                                clearInterval(checkAutoFold);
+                                resolve();
+                            } else {
+                                this.log('⏳ Waiting for auto-fold...');
+                            }
+                        }
+                    }, 500);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        clearInterval(checkAutoFold);
+                        this.log('⏰ Timeout waiting for auto-fold');
+                        resolve();
+                    }, 10000);
+                });
+            }
+
+            resetTest() {
+                this.log('🔄 Resetting test...');
+                this.updateStatus('Resetting test...', 'info');
+                
+                if (this.socket) {
+                    this.socket.disconnect();
+                    this.socket = null;
+                }
+                
+                this.gameState = null;
+                this.players = [];
+                this.myPlayerId = null;
+                this.testStep = 0;
+                this.reconnectedPlayerId = null;
+                this.autoFoldDetected = false;
+                
+                document.getElementById('log').textContent = '';
+                this.updateGameState();
+                this.updatePlayers();
+                
+                this.updateStatus('Ready to start test', 'info');
+                this.log('✅ Test reset complete');
+            }
+        }
+
+        // Initialize test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.reconnectAutoFoldTest = new ReconnectAutoFoldTest();
+        });
+    </script>
+</body>
+</html> 

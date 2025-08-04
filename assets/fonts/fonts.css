@@ -1,0 +1,52 @@
+/* PF Din Text Comp Pro Font Family */
+
+@font-face {
+    font-family: 'PF Din Text Comp Pro';
+    src: url('./PFDinTextCompPro-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'PF Din Text Comp Pro';
+    src: url('./PFDinTextCompPro-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'PF Din Text Comp Pro';
+    src: url('./PFDinTextCompPro-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* CSS Variables for easy usage */
+:root {
+    --font-primary: 'PF Din Text Comp Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+}
+
+/* Global font application */
+body {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-regular);
+}
+
+/* Utility classes */
+.font-regular {
+    font-weight: var(--font-weight-regular);
+}
+
+.font-medium {
+    font-weight: var(--font-weight-medium);
+}
+
+.font-bold {
+    font-weight: var(--font-weight-bold);
+} 

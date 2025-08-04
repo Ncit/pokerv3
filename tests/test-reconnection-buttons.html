@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnection Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f44336;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .debug-info {
+            background-color: #2d1b69;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .debug-info h4 {
+            color: #9c27b0;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔄 Reconnection Button Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test helps debug the issue where buttons are not clickable after reconnection, even when it's the player's turn.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🐛 Root Cause Analysis</h2>
+            <div class="test-description">
+                The issue is that after reconnection, the player's turn is detected correctly, but the UI buttons are not properly restored to an interactive state.
+            </div>
+            
+            <div class="debug-info">
+                <h4>Problem Identified:</h4>
+                <div class="code-block">
+// ISSUE: After reconnection, buttons are not clickable
+// Even though isMyTurn() returns true, buttons remain disabled
+
+// ENHANCED FIXES APPLIED:
+1. Enhanced restoreUIAfterReconnection() with detailed logging
+2. Added button interactivity debugging
+3. Added safety check to force enable buttons
+4. Enhanced enablePlayerActions() with debugging
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario: Reconnection Button Fix</h2>
+            <div class="test-description">
+                Test that buttons are properly restored to interactive state after reconnection.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in two browser windows</li>
+                    <li>Join as different players (Player1, Player2)</li>
+                    <li>Start the game</li>
+                    <li>When it's Player1's turn, disconnect Player1 (close tab or network disconnect)</li>
+                    <li>Reconnect Player1 (reopen tab or restore network)</li>
+                    <li>Check if it's still Player1's turn</li>
+                    <li>Verify that buttons are clickable after reconnection</li>
+                    <li>Check console for detailed reconnection logs</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Console should show detailed <span class="highlight">reconnection logs</span></li>
+                    <li>Buttons should be <span class="highlight">enabled and clickable</span> after reconnection</li>
+                    <li>Console should show: <code>"FastGameScene: Buttons force-enabled after reconnection"</code></li>
+                    <li>Button interactivity status should show all buttons as enabled</li>
+                    <li>No "not your turn" errors when clicking buttons after reconnection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Fixes Applied</h2>
+            <div class="test-description">
+                Enhanced the reconnection UI restoration process with multiple safety checks:
+            </div>
+            
+            <div class="expected-result">
+                <h4>Enhanced restoreUIAfterReconnection() Method:</h4>
+                <div class="code-block">
+restoreUIAfterReconnection() {
+    console.log('FastGameScene: Restoring UI after reconnection');
+    
+    // Force a complete UI update
+    this.updateUI();
+    
+    // Ensure all buttons are properly set up
+    this.setupButtonHandlers();
+    
+    // If in game state, ensure action buttons are properly configured
+    if (this.gameState && this.gameState.status === 'playing') {
+        console.log('FastGameScene: Game is in playing state, updating action buttons');
+        
+        // Check if it's the player's turn
+        const isMyTurn = this.networkManager.isMyTurn();
+        const myPlayer = this.networkManager.getMyPlayer();
+        
+        console.log('FastGameScene: Reconnection turn check:', {
+            isMyTurn,
+            myPlayer: myPlayer ? {
+                id: myPlayer.id,
+                name: myPlayer.name,
+                folded: myPlayer.folded,
+                allIn: myPlayer.allIn,
+                isSpectator: myPlayer.isSpectator
+            } : null,
+            gamePhase: this.gameState.phase
+        });
+        
+        // Force update action buttons
+        this.updateActionButtons();
+        
+        // If it's the player's turn, ensure buttons are enabled
+        if (isMyTurn && myPlayer && !myPlayer.folded && !myPlayer.allIn && !myPlayer.isSpectator) {
+            console.log('FastGameScene: It is my turn after reconnection - enabling buttons');
+            this.enablePlayerActions();
+            
+            // Double-check button interactivity
+            console.log('FastGameScene: Button interactivity check after reconnection:', {
+                foldButton: this.foldButton.input ? this.foldButton.input.enabled : 'no input',
+                callButton: this.callButton.input ? this.callButton.input.enabled : 'no input',
+                raiseButton: this.raiseButton.input ? this.raiseButton.input.enabled : 'no input',
+                allInButton: this.allInButton.input ? this.allInButton.input.enabled : 'no input'
+            });
+        }
+    }
+    
+    // Additional safety check: if it's the player's turn, force enable buttons
+    if (this.gameState && this.gameState.status === 'playing') {
+        const isMyTurn = this.networkManager.isMyTurn();
+        const myPlayer = this.networkManager.getMyPlayer();
+        
+        if (isMyTurn && myPlayer && !myPlayer.folded && !myPlayer.allIn && !myPlayer.isSpectator) {
+            console.log('FastGameScene: Safety check - forcing button enable after reconnection');
+            
+            // Force enable all buttons
+            this.foldButton.setInteractive();
+            this.callButton.setInteractive();
+            this.raiseButton.setInteractive();
+            this.allInButton.setInteractive();
+            
+            // Reset text colors
+            this.foldButtonText.setFill('#ffffff');
+            this.callButtonText.setFill('#ffffff');
+            this.raiseButtonText.setFill('#ffffff');
+            this.allInButtonText.setFill('#ffffff');
+            
+            console.log('FastGameScene: Buttons force-enabled after reconnection');
+        }
+    }
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📊 Expected Console Output</h2>
+            <div class="test-description">
+                The enhanced logging will show detailed information about the reconnection process:
+            </div>
+            
+            <div class="debug-info">
+                <h4>Expected Console Logs:</h4>
+                <div class="code-block">
+FastGameScene: Restoring UI after reconnection
+FastGameScene: Game is in playing state, updating action buttons
+FastGameScene: Reconnection turn check: {
+    isMyTurn: true,
+    myPlayer: {
+        id: "player1_id",
+        name: "Player1",
+        folded: false,
+        allIn: false,
+        isSpectator: false
+    },
+    gamePhase: "preflop"
+}
+FastGameScene: It is my turn after reconnection - enabling buttons
+FastGameScene: All action buttons enabled
+FastGameScene: Button interactivity status: {
+    foldButton: true,
+    callButton: true,
+    raiseButton: true,
+    allInButton: true
+}
+FastGameScene: Safety check - forcing button enable after reconnection
+FastGameScene: Buttons force-enabled after reconnection
+FastGameScene: UI restoration after reconnection complete
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Troubleshooting Guide</h2>
+            <div class="test-description">
+                If buttons are still not clickable after reconnection:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li><strong>Check Console Logs:</strong> Look for the detailed reconnection logs</li>
+                    <li><strong>Verify Turn State:</strong> Ensure <code>isMyTurn</code> returns true</li>
+                    <li><strong>Check Player State:</strong> Ensure player is not folded, all-in, or spectator</li>
+                    <li><strong>Verify Button Interactivity:</strong> Check the button interactivity status logs</li>
+                    <li><strong>Check Game State:</strong> Ensure game is in 'playing' state</li>
+                    <li><strong>Verify Button Creation:</strong> Ensure buttons exist and have input handlers</li>
+                    <li><strong>Check Network State:</strong> Ensure reconnection was successful</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Common Issues</h2>
+            <div class="warning">
+                <strong>Potential Reconnection Issues:</strong>
+                <ul>
+                    <li><strong>Timing Issues:</strong> Buttons restored before game state is fully updated</li>
+                    <li><strong>Player State Mismatch:</strong> Player marked as spectator or disconnected</li>
+                    <li><strong>Button Handler Loss:</strong> Event handlers not properly reattached</li>
+                    <li><strong>Game State Inconsistency:</strong> Client and server state out of sync</li>
+                    <li><strong>Network Delays:</strong> Game state updates delayed after reconnection</li>
+                    <li><strong>Button Creation Issues:</strong> Buttons not properly recreated after reconnection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">✅ Verification Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify the reconnection button fix:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ Console shows detailed reconnection restoration logs</li>
+                    <li>✅ Turn detection works correctly after reconnection</li>
+                    <li>✅ All action buttons are enabled and clickable</li>
+                    <li>✅ Button interactivity status shows all buttons as enabled</li>
+                    <li>✅ No "not your turn" errors when clicking buttons</li>
+                    <li>✅ Button text colors are white (enabled state)</li>
+                    <li>✅ Game state is properly restored after reconnection</li>
+                    <li>✅ Player state is correctly maintained (not spectator/folded)</li>
+                    <li>✅ Event handlers are properly reattached</li>
+                    <li>✅ Reconnection works in different game phases</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Next Steps</h2>
+            <div class="test-description">
+                After verifying the reconnection button fix:
+            </div>
+            
+            <div class="success">
+                <strong>If Reconnection Works:</strong>
+                <ul>
+                    <li>Test reconnection in different game phases (preflop, flop, turn, river)</li>
+                    <li>Test reconnection when multiple players disconnect/reconnect</li>
+                    <li>Test reconnection during active betting rounds</li>
+                    <li>Verify spectator functionality after reconnection</li>
+                </ul>
+            </div>
+            
+            <div class="error">
+                <strong>If Issues Persist:</strong>
+                <ul>
+                    <li>Check for race conditions in UI restoration</li>
+                    <li>Review button creation and event handler setup</li>
+                    <li>Verify game state synchronization after reconnection</li>
+                    <li>Check for timing issues in the reconnection process</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

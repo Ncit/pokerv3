@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectator Cards Hidden Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🃏 Spectator Cards Hidden Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test verifies that spectator players do not have their cards displayed during gameplay, ensuring that spectators cannot see any player's cards until they are revealed during showdown.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario: Spectator Cards Hidden During Gameplay</h2>
+            <div class="test-description">
+                Test that spectator players do not have any cards displayed during normal gameplay phases.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in three browser windows/tabs</li>
+                    <li>In the first window, join as "Player1"</li>
+                    <li>In the second window, join as "Player2"</li>
+                    <li>Start the game (both players should be ready automatically)</li>
+                    <li>Once the game is in progress (cards dealt, betting round started), open a third browser window</li>
+                    <li>In the third window, join as "Player3" (spectator)</li>
+                    <li>Observe the card display for all players</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Player1 and Player2 should have their cards displayed (face down for others, face up for themselves)</li>
+                    <li>Player3 (spectator) should <span class="highlight">NOT have any cards displayed</span></li>
+                    <li>Player3 should see "[SPECTATOR]" next to their name</li>
+                    <li>Player3 should not be able to make any game actions</li>
+                    <li>Console should show: <code>"FastGameScene: Hiding cards for spectator player: Player3"</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔄 Test Scenario: Reconnected Player Cards Hidden</h2>
+            <div class="test-description">
+                Test that a player who disconnects and reconnects during an active game has their cards hidden.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start with a 3-player game in progress</li>
+                    <li>Have Player1 disconnect (close browser tab/window)</li>
+                    <li>Wait a moment for the server to detect the disconnect</li>
+                    <li>Have Player1 reconnect (open new browser window and join with same name)</li>
+                    <li>Observe Player1's card display after reconnection</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Player1 should be marked as a <span class="highlight">spectator</span> after reconnection</li>
+                    <li>Player1 should see "[SPECTATOR]" next to their name</li>
+                    <li>Player1 should <span class="highlight">NOT have any cards displayed</span></li>
+                    <li>Player1 should not be able to make any actions</li>
+                    <li>Console should show: <code>"FastGameScene: Hiding cards for spectator player: Player1"</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Test Scenario: Showdown Card Revelation</h2>
+            <div class="test-description">
+                Test that during showdown, all players' cards are revealed (including spectators who had cards).
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start with a 3-player game in progress</li>
+                    <li>Have Player1 disconnect and reconnect (becoming a spectator)</li>
+                    <li>Continue the game until showdown phase</li>
+                    <li>Observe card revelation during showdown</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>During showdown, <span class="highlight">all players' cards should be revealed</span></li>
+                    <li>This includes spectators who had cards when they were active players</li>
+                    <li>Cards should be displayed face up for all players to see</li>
+                    <li>Winning cards should be highlighted with a golden tint</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Implementation Details</h2>
+            <div class="test-description">
+                The spectator card hiding functionality is implemented in several key methods:
+            </div>
+            
+            <div class="code-block">
+// In updatePlayerCards() - Hides cards for spectators
+if (player.isSpectator) {
+    console.log('FastGameScene: Hiding cards for spectator player:', player.name);
+    this.cardManager.safeClearPlayerCards(elements.playerNumber);
+    return;
+}
+
+// In dealHoleCards() - Skips card display for spectators
+if (player.isSpectator) {
+    console.log('FastGameScene: Skipping card display for spectator player:', player.name);
+    return;
+}
+
+// In revealAllPlayersCards() - Shows all cards during showdown
+// This method still works for spectators during showdown
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Important Notes</h2>
+            <div class="warning">
+                <strong>Card Visibility Rules:</strong>
+                <ul>
+                    <li>Spectators do not see any cards during normal gameplay</li>
+                    <li>Spectators can see all revealed cards during showdown</li>
+                    <li>Reconnected players become spectators and lose card visibility</li>
+                    <li>Spectators become active players when new games start</li>
+                </ul>
+            </div>
+            
+            <div class="success">
+                <strong>Security Benefits:</strong>
+                <ul>
+                    <li>Prevents spectators from gaining unfair information</li>
+                    <li>Maintains game integrity and fairness</li>
+                    <li>Ensures only active players can see their cards</li>
+                    <li>Allows spectators to watch the game without interfering</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Troubleshooting</h2>
+            <div class="test-description">
+                If spectator cards are still being displayed:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li>Check browser console for spectator-related logs</li>
+                    <li>Verify that <code>player.isSpectator</code> is true for spectator players</li>
+                    <li>Ensure <code>updatePlayerCards()</code> is being called with correct parameters</li>
+                    <li>Check that <code>cardManager.safeClearPlayerCards()</code> is working properly</li>
+                    <li>Verify that the spectator flag is being set correctly on the server</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📋 Test Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify the spectator card hiding functionality:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ New spectators joining during game have no cards displayed</li>
+                    <li>✅ Reconnected players (spectators) have no cards displayed</li>
+                    <li>✅ Spectators see "[SPECTATOR]" label</li>
+                    <li>✅ Spectators cannot make game actions</li>
+                    <li>✅ Console shows appropriate spectator card hiding logs</li>
+                    <li>✅ Active players still see their cards normally</li>
+                    <li>✅ Cards are revealed for all players during showdown</li>
+                    <li>✅ Spectators become active players when new games start</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

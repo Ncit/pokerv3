@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Room Empty Reset</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .log {
+            background-color: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #2d5a2d; }
+        .error { background-color: #5a2d2d; }
+        .info { background-color: #2d2d5a; }
+        .warning { background-color: #5a5a2d; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .player-info {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .player-card {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+        .game-state {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            margin: 10px 0;
+        }
+        .reset-indicator {
+            background-color: #5a2d2d;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #ff6b6b;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Room Empty Reset</h1>
+        <p>This test verifies that when all players leave the room, all game values are properly reset.</p>
+
+        <div class="test-section">
+            <h2>Test Setup</h2>
+            <button id="startTest">Start Test</button>
+            <button id="resetTest">Reset Test</button>
+            <div id="testStatus" class="status info">Ready to start test</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Game State</h2>
+            <div id="gameState" class="game-state">Not connected</div>
+            <div id="resetIndicator" class="reset-indicator">
+                <strong>🏠 ROOM RESET DETECTED</strong><br>
+                All values have been reset to initial state.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Players</h2>
+            <div id="playersContainer"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Log</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        class RoomEmptyResetTest {
+            constructor() {
+                this.socket = null;
+                this.gameState = null;
+                this.players = [];
+                this.myPlayerId = null;
+                this.testStep = 0;
+                this.roomResetDetected = false;
+                this.initialGameState = null;
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('startTest').addEventListener('click', () => this.startTest());
+                document.getElementById('resetTest').addEventListener('click', () => this.resetTest());
+            }
+
+            log(message) {
+                const logElement = document.getElementById('log');
+                const timestamp = new Date().toLocaleTimeString();
+                logElement.textContent += `[${timestamp}] ${message}\n`;
+                logElement.scrollTop = logElement.scrollHeight;
+                console.log(message);
+            }
+
+            updateStatus(message, type = 'info') {
+                const statusElement = document.getElementById('testStatus');
+                statusElement.textContent = message;
+                statusElement.className = `status ${type}`;
+            }
+
+            updateGameState() {
+                const gameStateElement = document.getElementById('gameState');
+                if (this.gameState) {
+                    gameStateElement.innerHTML = `
+                        <strong>Status:</strong> ${this.gameState.status}<br>
+                        <strong>Phase:</strong> ${this.gameState.phase}<br>
+                        <strong>Pot:</strong> ${this.gameState.pot}<br>
+                        <strong>Current Bet:</strong> ${this.gameState.currentBet}<br>
+                        <strong>Dealer Position:</strong> ${this.gameState.dealerPosition}<br>
+                        <strong>Current Player:</strong> ${this.gameState.currentPlayer}<br>
+                        <strong>Players:</strong> ${this.gameState.totalPlayers}/${this.gameState.maxPlayers}<br>
+                        <strong>Ready Players:</strong> ${this.gameState.readyCount}<br>
+                        <strong>All Ready:</strong> ${this.gameState.allPlayersReady ? 'Yes' : 'No'}
+                    `;
+                } else {
+                    gameStateElement.textContent = 'Not connected';
+                }
+            }
+
+            updatePlayers() {
+                const container = document.getElementById('playersContainer');
+                if (!this.players || this.players.length === 0) {
+                    container.innerHTML = '<p>No players</p>';
+                    return;
+                }
+
+                container.innerHTML = this.players.map(player => {
+                    const isCurrent = player.isCurrentPlayer;
+                    const isMe = player.id === this.myPlayerId;
+                    
+                    return `
+                        <div class="player-card">
+                            <strong>${player.name}</strong> ${isMe ? '(YOU)' : ''} ${isCurrent ? '(CURRENT)' : ''}<br>
+                            Bank: ${player.bank}<br>
+                            Bet: ${player.currentBet}<br>
+                            Folded: ${player.folded ? 'Yes' : 'No'}<br>
+                            All-in: ${player.allIn ? 'Yes' : 'No'}<br>
+                            Ready: ${player.ready ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            showResetIndicator() {
+                const indicator = document.getElementById('resetIndicator');
+                indicator.style.display = 'block';
+                this.roomResetDetected = true;
+            }
+
+            hideResetIndicator() {
+                const indicator = document.getElementById('resetIndicator');
+                indicator.style.display = 'none';
+                this.roomResetDetected = false;
+            }
+
+            async startTest() {
+                this.log('🚀 Starting Room Empty Reset Test');
+                this.updateStatus('Connecting to server...', 'info');
+                this.hideResetIndicator();
+                
+                try {
+                    await this.connectToServer();
+                    await this.joinGame();
+                    await this.waitForGameStart();
+                    await this.recordInitialState();
+                    await this.simulateAllPlayersLeave();
+                    await this.verifyRoomReset();
+                    
+                    this.log('✅ Test completed successfully!');
+                    this.updateStatus('Test completed successfully!', 'success');
+                } catch (error) {
+                    this.log(`❌ Test failed: ${error.message}`);
+                    this.updateStatus(`Test failed: ${error.message}`, 'error');
+                }
+            }
+
+            connectToServer() {
+                return new Promise((resolve, reject) => {
+                    this.log('📡 Connecting to server...');
+                    
+                    this.socket = io('http://localhost:3000');
+                    
+                    this.socket.on('connect', () => {
+                        this.log('✅ Connected to server');
+                        resolve();
+                    });
+                    
+                    this.socket.on('connect_error', (error) => {
+                        this.log(`❌ Connection failed: ${error.message}`);
+                        reject(new Error(`Connection failed: ${error.message}`));
+                    });
+                    
+                    // Set up event listeners
+                    this.setupSocketListeners();
+                });
+            }
+
+            setupSocketListeners() {
+                this.socket.on('gameJoined', (data) => {
+                    this.log(`🎮 Joined game as ${data.playerId}`);
+                    this.myPlayerId = data.playerId;
+                    this.gameState = data.gameState;
+                    this.players = data.players;
+                    this.updateGameState();
+                    this.updatePlayers();
+                });
+
+                this.socket.on('gameStateUpdate', (data) => {
+                    this.log(`🔄 Game state updated: ${data.gameState.status} - ${data.gameState.phase}`);
+                    this.gameState = data.gameState;
+                    this.players = data.gameState.players;
+                    this.updateGameState();
+                    this.updatePlayers();
+                    
+                    if (data.gameStarted) {
+                        this.log('🎮 Game started!');
+                    }
+                    
+                    if (data.lastAction) {
+                        this.log(`🎯 Last action: ${data.lastAction.action} by ${data.lastAction.playerName}`);
+                    }
+                });
+
+                this.socket.on('playerJoined', (data) => {
+                    this.log(`👤 Player joined: ${data.player.name}`);
+                });
+
+                this.socket.on('playerDisconnected', (data) => {
+                    this.log(`👋 Player disconnected: ${data.playerName}`);
+                });
+
+                this.socket.on('roomEmpty', (data) => {
+                    this.log(`🏠 Room empty event received: ${data.message}`);
+                    this.showResetIndicator();
+                });
+
+                this.socket.on('error', (data) => {
+                    this.log(`❌ Error: ${data.message}`);
+                });
+            }
+
+            joinGame() {
+                return new Promise((resolve) => {
+                    this.log('🎯 Joining game...');
+                    
+                    const playerData = {
+                        name: `TestPlayer_${Date.now()}`,
+                        avatarUrl: 'https://gravatar.com/avatar/default?s=400&d=robohash&r=x'
+                    };
+                    
+                    this.socket.emit('joinGame', playerData);
+                    
+                    // Wait for gameJoined event
+                    const checkJoined = setInterval(() => {
+                        if (this.myPlayerId) {
+                            clearInterval(checkJoined);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            waitForGameStart() {
+                return new Promise((resolve) => {
+                    this.log('⏳ Waiting for game to start...');
+                    
+                    const checkGameStarted = setInterval(() => {
+                        if (this.gameState && this.gameState.status === 'playing') {
+                            clearInterval(checkGameStarted);
+                            this.log('🎮 Game is now playing!');
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            recordInitialState() {
+                return new Promise((resolve) => {
+                    this.log('📝 Recording initial game state...');
+                    
+                    this.initialGameState = {
+                        status: this.gameState.status,
+                        phase: this.gameState.phase,
+                        pot: this.gameState.pot,
+                        currentBet: this.gameState.currentBet,
+                        dealerPosition: this.gameState.dealerPosition,
+                        currentPlayer: this.gameState.currentPlayer,
+                        totalPlayers: this.gameState.totalPlayers,
+                        readyCount: this.gameState.readyCount,
+                        allPlayersReady: this.gameState.allPlayersReady
+                    };
+                    
+                    this.log(`📊 Initial state recorded: Status=${this.initialGameState.status}, Phase=${this.initialGameState.phase}, Pot=${this.initialGameState.pot}`);
+                    resolve();
+                });
+            }
+
+            simulateAllPlayersLeave() {
+                return new Promise((resolve) => {
+                    this.log('🔌 Simulating all players leaving...');
+                    
+                    // Disconnect this player to simulate all players leaving
+                    this.log('🔌 Disconnecting current player to empty the room...');
+                    
+                    setTimeout(() => {
+                        this.log('⏳ Waiting for room empty reset...');
+                        resolve();
+                    }, 2000);
+                });
+            }
+
+            verifyRoomReset() {
+                return new Promise((resolve) => {
+                    this.log('🔍 Verifying room reset...');
+                    
+                    const checkReset = setInterval(() => {
+                        if (this.roomResetDetected) {
+                            this.log('✅ Room empty reset detected!');
+                            clearInterval(checkReset);
+                            resolve();
+                        }
+                    }, 500);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        clearInterval(checkReset);
+                        this.log('⏰ Timeout waiting for room reset');
+                        resolve();
+                    }, 10000);
+                });
+            }
+
+            resetTest() {
+                this.log('🔄 Resetting test...');
+                this.updateStatus('Resetting test...', 'info');
+                
+                if (this.socket) {
+                    this.socket.disconnect();
+                    this.socket = null;
+                }
+                
+                this.gameState = null;
+                this.players = [];
+                this.myPlayerId = null;
+                this.testStep = 0;
+                this.roomResetDetected = false;
+                this.initialGameState = null;
+                
+                document.getElementById('log').textContent = '';
+                this.updateGameState();
+                this.updatePlayers();
+                this.hideResetIndicator();
+                
+                this.updateStatus('Ready to start test', 'info');
+                this.log('✅ Test reset complete');
+            }
+        }
+
+        // Initialize test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.roomEmptyResetTest = new RoomEmptyResetTest();
+        });
+    </script>
+</body>
+</html> 

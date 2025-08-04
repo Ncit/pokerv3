@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Container Fix Test - Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .feature-list {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .feature-list h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .code-example {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 3px solid #e74c3c;
+        }
+        .scenario {
+            background: #2d5a2d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .scenario h4 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+        .button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        .warning {
+            background: #8b4513;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffa500;
+        }
+        .warning h4 {
+            color: #ffa500;
+            margin-top: 0;
+        }
+        .fix {
+            background: #2d5a2d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .fix h4 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🃏 Card Container Fix Test</h1>
+            <p>Testing the fix for "CardManager: No container found for player X" errors</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🐛 Problem Description</h2>
+            <p>The error "CardManager: No container found for player 1" was occurring during game initialization when the system tried to clear card containers that hadn't been created yet.</p>
+            
+            <div class="feature-list">
+                <h3>Root Cause:</h3>
+                <ul>
+                    <li><strong>Initialization Order:</strong> Card containers were being cleared before they were created</li>
+                    <li><strong>Error Logging:</strong> CardManager was logging errors for missing containers during normal initialization</li>
+                    <li><strong>Player Numbering:</strong> The system was trying to clear containers for players 1-6 regardless of whether they existed</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Fix Implementation</h2>
+            
+            <div class="fix">
+                <h4>1. Fixed Initialization Order in FastGameScene.js</h4>
+                <p>Modified `initializePlayers()` method to only clear containers that actually exist:</p>
+            </div>
+            
+            <div class="code-example">
+                <h4>Before (Problematic Code):</h4>
+                <pre>
+// Clear all existing card containers
+for (let i = 1; i <= 6; i++) {
+    this.cardManager.clearPlayerCards(i);
+}
+                </pre>
+            </div>
+
+            <div class="code-example">
+                <h4>After (Fixed Code):</h4>
+                <pre>
+// Store existing player numbers before clearing
+const existingPlayerNumbers = Array.from(this.playerElements.values())
+    .map(elements => elements.playerNumber)
+    .filter(number => number !== undefined);
+
+// Clear existing players
+this.playerElements.clear();
+
+// Clear existing card containers (only if they exist)
+existingPlayerNumbers.forEach(playerNumber => {
+    this.cardManager.safeClearPlayerCards(playerNumber);
+});
+                </pre>
+            </div>
+
+            <div class="fix">
+                <h4>2. Added Safe Clear Method in CardManager.js</h4>
+                <p>Created `safeClearPlayerCards()` method that doesn't log errors for missing containers:</p>
+            </div>
+            
+            <div class="code-example">
+                <h4>New Safe Clear Method:</h4>
+                <pre>
+safeClearPlayerCards(playerNumber) {
+    const containerKey = `player${playerNumber}_cards`;
+    const containerData = this.cardContainers.get(containerKey);
+    
+    if (!containerData) {
+        return false; // No error logging
+    }
+
+    // Destroy all card sprites
+    containerData.cards.forEach(cardData => {
+        containerData.container.remove(cardData.sprite);
+        cardData.sprite.destroy();
+    });
+
+    // Clear cards array
+    containerData.cards = [];
+
+    if (this.isDebug) {
+        console.log(`CardManager: Safely cleared all cards for player ${playerNumber}`);
+    }
+
+    // Emit cards cleared event
+    eventManager.emit('cards_cleared', playerNumber);
+
+    return true;
+}
+                </pre>
+            </div>
+
+            <div class="fix">
+                <h4>3. Updated All Clear Calls</h4>
+                <p>Replaced all `clearPlayerCards()` calls with `safeClearPlayerCards()` to prevent error logging:</p>
+            </div>
+            
+            <div class="code-example">
+                <h4>Updated Method Calls:</h4>
+                <pre>
+// In handleNewHand()
+this.playerElements.forEach((elements, playerId) => {
+    this.cardManager.safeClearPlayerCards(elements.playerNumber);
+});
+
+// In updatePlayerCards()
+this.cardManager.safeClearPlayerCards(elements.playerNumber);
+                </pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Test Scenarios</h2>
+            
+            <div class="scenario">
+                <h4>Scenario 1: Game Initialization</h4>
+                <p><strong>Setup:</strong> Start a new multiplayer game</p>
+                <p><strong>Expected Result:</strong> No "No container found" errors in console</p>
+                <p><strong>Why:</strong> Containers are only cleared if they exist</p>
+            </div>
+
+            <div class="scenario">
+                <h4>Scenario 2: Player Joining</h4>
+                <p><strong>Setup:</strong> Have players join the game</p>
+                <p><strong>Expected Result:</strong> Card containers are created properly for each player</p>
+                <p><strong>Why:</strong> `createPlayerUI()` creates containers before they're needed</p>
+            </div>
+
+            <div class="scenario">
+                <h4>Scenario 3: New Hand</h4>
+                <p><strong>Setup:</strong> Start a new hand after game begins</p>
+                <p><strong>Expected Result:</strong> Cards are cleared and redealt without errors</p>
+                <p><strong>Why:</strong> Safe clear method handles missing containers gracefully</p>
+            </div>
+
+            <div class="scenario">
+                <h4>Scenario 4: Player Leaving</h4>
+                <p><strong>Setup:</strong> Have a player disconnect during game</p>
+                <p><strong>Expected Result:</strong> Player removal doesn't cause container errors</p>
+                <p><strong>Why:</strong> Safe clear method prevents errors during cleanup</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Debugging Information</h2>
+            <p>The fix includes improved debugging to help identify container issues:</p>
+            
+            <div class="code-example">
+                <h4>Debug Logging:</h4>
+                <pre>
+// CardManager debug mode shows container operations
+if (this.isDebug) {
+    console.log(`CardManager: Safely cleared all cards for player ${playerNumber}`);
+}
+
+// FastGameScene shows initialization steps
+console.log('FastGameScene: Initializing players...');
+console.log('FastGameScene: Creating card containers...');
+                </pre>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li>This fix only affects error logging - functionality remains the same</li>
+                <li>Card containers are still created and managed properly</li>
+                <li>The fix prevents console spam during normal initialization</li>
+                <li>Debug mode still provides detailed logging when needed</li>
+                <li>All existing card functionality continues to work as expected</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 How to Test</h2>
+            <ol>
+                <li>Start the poker server: <code>cd pokerv2/server && npm run dev</code></li>
+                <li>Open the game in multiple browser tabs</li>
+                <li>Join the game with different players</li>
+                <li>Set all players to ready and start the game</li>
+                <li>Check browser console for any "No container found" errors</li>
+                <li>Verify that cards are displayed properly for all players</li>
+                <li>Test new hand functionality to ensure cards clear and redeal correctly</li>
+                <li>Have players disconnect and reconnect to test cleanup</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 Quick Links</h2>
+            <a href="index.html" class="button">🎮 Play Multiplayer Game</a>
+            <a href="test-ai-bot.html" class="button">🤖 Test AI Bot Game</a>
+            <a href="test-lobby-system.html" class="button">🏠 Test Lobby System</a>
+            <a href="test-raise-fix.html" class="button">💰 Test Raise Fix</a>
+            <a href="test-allin-fix.html" class="button">🎯 Test All-In Fix</a>
+            <a href="test-auto-allin.html" class="button">🔄 Test Auto All-In</a>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Benefits</h2>
+            <div class="feature-list">
+                <ul>
+                    <li><strong>Clean Console:</strong> No more error spam during initialization</li>
+                    <li><strong>Better Debugging:</strong> Clear distinction between errors and normal operations</li>
+                    <li><strong>Robust Initialization:</strong> Handles edge cases gracefully</li>
+                    <li><strong>Maintained Functionality:</strong> All card features work as expected</li>
+                    <li><strong>Improved UX:</strong> Players don't see confusing error messages</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🃏 Card Container Fix Test Page Loaded');
+            console.log('📋 This page documents the fix for card container errors');
+            console.log('🔧 The fix prevents "No container found" errors during initialization');
+        });
+    </script>
+</body>
+</html> 

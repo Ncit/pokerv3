@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Loop Fix Test - Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .feature-list {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .feature-list h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .code-example {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 3px solid #e74c3c;
+        }
+        .scenario {
+            background: #2d5a2d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .scenario h4 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+        .button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        .warning {
+            background: #8b4513;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffa500;
+        }
+        .warning h4 {
+            color: #ffa500;
+            margin-top: 0;
+        }
+        .fix-details {
+            background: #4a2d5a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9b59b6;
+        }
+        .fix-details h4 {
+            color: #9b59b6;
+            margin-top: 0;
+        }
+        .step-by-step {
+            background: #2d4a5a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        .step-by-step h4 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .step-by-step ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .step-by-step li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Infinite Loop Fix Test</h1>
+            <p>Testing the fix for infinite loop when all players call after community cards are dealt</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🐛 Problem Description</h2>
+            <p>When all 5 community cards are on the deck and all players click "call" (or "check"), the game gets stuck in an infinite loop with repeated "check" actions being logged in the server console.</p>
+            
+            <div class="warning">
+                <h4>⚠️ Symptoms:</h4>
+                <ul>
+                    <li>Server console shows repeated "check" actions in a loop</li>
+                    <li>Game doesn't progress to showdown</li>
+                    <li>Players can't take actions</li>
+                    <li>Betting round never completes</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Root Cause Analysis</h2>
+            
+            <div class="fix-details">
+                <h4>Issue Identified:</h4>
+                <ul>
+                    <li><strong>Betting Round Completion Logic:</strong> The `isBettingRoundComplete()` method wasn't correctly detecting when all players had equal bets and had acted</li>
+                    <li><strong>Infinite Loop in startBettingRound():</strong> When skipping folded/all-in players, the method could call `nextPlayer()` which might trigger `nextPhase()` and then call `startBettingRound()` again</li>
+                    <li><strong>Phase Transition Logic:</strong> The `nextPhase()` method always called `startBettingRound()` even when the betting round was already complete</li>
+                </ul>
+            </div>
+
+            <div class="code-example">
+                <h4>Problematic Code (Before Fix):</h4>
+                <pre>
+startBettingRound() {
+    // Skip folded/all-in players
+    while (this.isCurrentPlayerFoldedOrAllIn()) {
+        this.nextPlayer(); // This could cause infinite loop
+    }
+}
+
+nextPlayer() {
+    if (this.isBettingRoundComplete()) {
+        this.nextPhase(); // Calls startBettingRound() again
+    } else {
+        this.startBettingRound(); // Could cause loop
+    }
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Solution Implemented</h2>
+            
+            <div class="fix-details">
+                <h4>Fixes Applied:</h4>
+                <ul>
+                    <li><strong>Enhanced startBettingRound():</strong> Added checks for betting round completion before and after skipping players</li>
+                    <li><strong>Improved nextPlayer():</strong> Added condition to prevent calling startBettingRound() during phase transitions</li>
+                    <li><strong>Enhanced isBettingRoundComplete():</strong> Added better logic for detecting when all players have acted and all bets are equal</li>
+                    <li><strong>Added Debug Logging:</strong> Comprehensive logging to track betting round completion and phase transitions</li>
+                </ul>
+            </div>
+
+            <div class="code-example">
+                <h4>Fixed Code (After Fix):</h4>
+                <pre>
+startBettingRound() {
+    // Check if betting round is already complete
+    if (this.isBettingRoundComplete()) {
+        this.nextPhase();
+        return;
+    }
+
+    // Skip folded/all-in players
+    while (this.isCurrentPlayerFoldedOrAllIn()) {
+        this.nextPlayer();
+        
+        // Check again if betting round is complete after skipping players
+        if (this.isBettingRoundComplete()) {
+            this.nextPhase();
+            return;
+        }
+    }
+}
+
+nextPlayer() {
+    if (this.isBettingRoundComplete()) {
+        this.nextPhase();
+    } else {
+        this.currentPlayer = nextPlayer;
+        // Only start betting round if not in phase transition
+        if (this.phase !== 'showdown') {
+            this.startBettingRound();
+        }
+    }
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Test Instructions</h2>
+            
+            <div class="step-by-step">
+                <h4>Phase 1: Setup</h4>
+                <ol>
+                    <li>Start the poker server: <code>cd pokerv2/server && npm run dev</code></li>
+                    <li>Open the game in three different browser tabs</li>
+                    <li>Join the game with three different players</li>
+                    <li>Set all players to ready and start the game</li>
+                </ol>
+            </div>
+
+            <div class="step-by-step">
+                <h4>Phase 2: Trigger the Issue</h4>
+                <ol>
+                    <li>Play through the preflop betting round normally</li>
+                    <li>Wait for the flop (3 community cards) to be dealt</li>
+                    <li>Have all players click "Call" or "Check" (no raises)</li>
+                    <li>Wait for the turn (4th community card) to be dealt</li>
+                    <li>Have all players click "Call" or "Check" again</li>
+                    <li>Wait for the river (5th community card) to be dealt</li>
+                    <li>Have all players click "Call" or "Check" one more time</li>
+                </ol>
+            </div>
+
+            <div class="step-by-step">
+                <h4>Phase 3: Verify Fix</h4>
+                <ol>
+                    <li>Check that the game proceeds to showdown automatically</li>
+                    <li>Verify no infinite loop in server console</li>
+                    <li>Check that hand evaluation occurs</li>
+                    <li>Verify winner is determined and pot is distributed</li>
+                    <li>Check that "Next Round" button appears</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Expected Results</h2>
+            
+            <div class="scenario">
+                <h4>Console Logs (Fixed):</h4>
+                <ul>
+                    <li><code>PokerGame: Post-flop betting complete: true</code></li>
+                    <li><code>PokerGame: Phase transition: flop → turn</code></li>
+                    <li><code>PokerGame: Starting new betting round for turn</code></li>
+                    <li><code>PokerGame: Post-flop betting complete: true</code></li>
+                    <li><code>PokerGame: Phase transition: turn → river</code></li>
+                    <li><code>PokerGame: Post-flop betting complete: true</code></li>
+                    <li><code>PokerGame: Phase transition: river → showdown</code></li>
+                </ul>
+            </div>
+
+            <div class="scenario">
+                <h4>Game Flow (Fixed):</h4>
+                <ul>
+                    <li>Preflop betting completes normally</li>
+                    <li>Flop is dealt, betting completes</li>
+                    <li>Turn is dealt, betting completes</li>
+                    <li>River is dealt, betting completes</li>
+                    <li>Showdown occurs automatically</li>
+                    <li>Winner is determined</li>
+                    <li>Next round button appears</li>
+                </ul>
+            </div>
+
+            <div class="scenario">
+                <h4>No More Infinite Loop:</h4>
+                <ul>
+                    <li>No repeated "check" actions in server console</li>
+                    <li>Game progresses smoothly through all phases</li>
+                    <li>Players can take actions normally</li>
+                    <li>Betting rounds complete properly</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Debug Information</h2>
+            
+            <div class="code-example">
+                <h4>Key Debug Points:</h4>
+                <pre>
+// Check server console for these messages:
+"PokerGame: Post-flop betting complete: true/false"
+"PokerGame: Phase transition: [phase] → [phase]"
+"PokerGame: Starting new betting round for [phase]"
+
+// Verify betting round completion:
+- All players have equal bets OR are all-in
+- All players have acted OR are all-in
+- No infinite loop of check actions
+
+// Check game progression:
+- Flop → Turn → River → Showdown
+- Each phase completes properly
+- No stuck states
+                </pre>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li>This fix addresses the infinite loop issue specifically</li>
+                <li>The fix maintains all existing poker game logic</li>
+                <li>Debug logging has been added to help track issues</li>
+                <li>The fix works for all betting rounds (preflop, flop, turn, river)</li>
+                <li>All-in scenarios are handled correctly</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Alternative Test Scenarios</h2>
+            
+            <div class="fix-details">
+                <h4>Scenario A: Mixed Actions</h4>
+                <p>Some players call, some check, no raises</p>
+                <ul>
+                    <li>Player 1: Call</li>
+                    <li>Player 2: Check</li>
+                    <li>Player 3: Call</li>
+                </ul>
+            </div>
+
+            <div class="fix-details">
+                <h4>Scenario B: All Check</h4>
+                <p>All players check (no bets to call)</p>
+                <ul>
+                    <li>Player 1: Check</li>
+                    <li>Player 2: Check</li>
+                    <li>Player 3: Check</li>
+                </ul>
+            </div>
+
+            <div class="fix-details">
+                <h4>Scenario C: All-In Players</h4>
+                <p>Some players go all-in, others call</p>
+                <ul>
+                    <li>Player 1: All-in</li>
+                    <li>Player 2: Call</li>
+                    <li>Player 3: Call</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 Quick Links</h2>
+            <a href="index.html" class="button">🎮 Play Multiplayer Game</a>
+            <a href="test-three-allin.html" class="button">🎯 Test Three Players All-In</a>
+            <a href="test-auto-allin.html" class="button">🔄 Test Auto All-In</a>
+            <a href="test-lobby-system.html" class="button">🏠 Test Lobby System</a>
+            <a href="test-raise-fix.html" class="button">💰 Test Raise Fix</a>
+            <a href="test-all-in-fix.html" class="button">🎯 Test All-In Fix</a>
+            <a href="test-card-container-fix.html" class="button">🃏 Test Card Container Fix</a>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Success Criteria</h2>
+            <div class="feature-list">
+                <ul>
+                    <li><strong>No Infinite Loop:</strong> Game progresses through all phases without getting stuck</li>
+                    <li><strong>Proper Phase Transitions:</strong> Flop → Turn → River → Showdown</li>
+                    <li><strong>Betting Round Completion:</strong> All betting rounds complete when all players have acted</li>
+                    <li><strong>Showdown Logic:</strong> Hand evaluation occurs and winner is determined</li>
+                    <li><strong>No Console Errors:</strong> No repeated action logs or error messages</li>
+                    <li><strong>Smooth Game Flow:</strong> Players can take actions and game progresses normally</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔄 Infinite Loop Fix Test Page Loaded');
+            console.log('📋 This page tests the fix for infinite loop when all players call');
+            console.log('🔧 The fix addresses betting round completion logic issues');
+            
+            // Add test scenario logging
+            console.log('🎰 Test Scenario: All players call after community cards are dealt');
+            console.log('🎯 Expected: Game progresses through flop → turn → river → showdown');
+            console.log('⚠️  Previous Issue: Infinite loop with repeated check actions');
+        });
+    </script>
+</body>
+</html> 

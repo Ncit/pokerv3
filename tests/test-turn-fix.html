@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Turn Tracking Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #FFD700;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 5px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a1e;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            margin: 10px 0;
+        }
+        .warning {
+            background-color: #3a1e1e;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+            margin: 10px 0;
+        }
+        .game-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .game-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .game-link:hover {
+            background-color: #45a049;
+        }
+        .ai-link {
+            background-color: #2196F3;
+        }
+        .ai-link:hover {
+            background-color: #1976D2;
+        }
+        .status {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Turn Tracking Fix</h1>
+        
+        <div class="test-section">
+            <div class="test-title">🎯 Test Objective</div>
+            <div class="test-description">
+                Verify that when a player leaves the room and the remaining players start a new game, 
+                the turn tracking works correctly and players can make actions without getting "Not your turn" errors.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔧 What Was Fixed</div>
+            <div class="test-description">
+                The issue was that when players left the room, they were marked as disconnected but not removed from the `playerOrder` array. 
+                This caused the game to use incorrect player indices when calculating whose turn it was.
+            </div>
+            <div class="test-steps">
+                <strong>Fixes Applied:</strong>
+                <ol>
+                    <li>Updated `startNewHand()` to use only active players (excluding disconnected ones) for position calculations</li>
+                    <li>Updated `handlePlayerAction()` to validate turns using active player order</li>
+                    <li>Updated `nextPlayer()` to use active player order for turn progression</li>
+                    <li>Updated `nextPhase()` to use active player order for starting player calculation</li>
+                    <li>Updated `isCurrentPlayerFoldedOrAllIn()` to use active player order</li>
+                    <li>Added `postBlindById()` method for posting blinds by player ID instead of position</li>
+                    <li>Updated `dealHoleCards()` to only deal to active players</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 Test Steps</div>
+            <div class="test-steps">
+                <ol>
+                    <li>Open the multiplayer game in 3 different browser tabs/windows</li>
+                    <li>Join the game with 3 different players (e.g., Player 1, Player 2, Player 3)</li>
+                    <li>All players click "Ready" and then "Start Game"</li>
+                    <li>Play a few rounds of poker normally</li>
+                    <li>Close one of the browser tabs (simulating a player leaving)</li>
+                    <li>In the remaining 2 browser tabs, verify that the room resets to lobby state</li>
+                    <li>Both remaining players click "Ready" and "Start Game" again</li>
+                    <li>Verify that both players can make actions (fold, call, raise, all-in) without getting "Not your turn" errors</li>
+                    <li>Complete the hand and verify the game works normally</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">✅ Expected Results</div>
+            <div class="expected-result">
+                <strong>Before Fix:</strong> After a player left and the remaining players started a new game, 
+                players would get "Not your turn" errors when trying to make actions.
+            </div>
+            <div class="expected-result">
+                <strong>After Fix:</strong> After a player leaves and the remaining players start a new game, 
+                both players should be able to make actions normally without any turn-related errors.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">⚠️ Important Notes</div>
+            <div class="warning">
+                <strong>Server Restart Required:</strong> Make sure to restart the server after applying the fixes 
+                so that the updated PokerGame.js code is loaded.
+            </div>
+            <div class="warning">
+                <strong>Multiple Browser Sessions:</strong> Use different browser sessions or incognito windows 
+                to simulate different players joining the game.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎮 Game Links</div>
+            <div class="game-links">
+                <a href="index.html" class="game-link" target="_blank">Multiplayer Game</a>
+                <a href="test_ai_bot.html" class="game-link ai-link" target="_blank">AI Bot Game (for comparison)</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔍 Debug Information</div>
+            <div class="status">
+                <strong>Server Status:</strong> <span id="serverStatus">Checking...</span><br>
+                <strong>Last Error:</strong> <span id="lastError">None</span><br>
+                <strong>Test Status:</strong> <span id="testStatus">Ready to test</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📝 Test Log</div>
+            <div class="status" id="testLog">
+                Test log will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some basic status checking
+        function updateStatus() {
+            const serverStatus = document.getElementById('serverStatus');
+            const lastError = document.getElementById('lastError');
+            const testStatus = document.getElementById('testStatus');
+            const testLog = document.getElementById('testLog');
+
+            // Check if server is running (basic check)
+            fetch('http://localhost:3000/health', { method: 'GET' })
+                .then(response => {
+                    if (response.ok) {
+                        serverStatus.textContent = 'Running';
+                        serverStatus.style.color = '#4CAF50';
+                    } else {
+                        serverStatus.textContent = 'Error';
+                        serverStatus.style.color = '#f44336';
+                    }
+                })
+                .catch(error => {
+                    serverStatus.textContent = 'Not running';
+                    serverStatus.style.color = '#f44336';
+                    lastError.textContent = error.message;
+                });
+
+            // Add test log entry
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.innerHTML += `<div>[${timestamp}] Test page loaded. Ready to test turn tracking fix.</div>`;
+        }
+
+        // Update status when page loads
+        document.addEventListener('DOMContentLoaded', updateStatus);
+
+        // Add some helpful console logging
+        console.log('🧪 Turn Tracking Fix Test Page Loaded');
+        console.log('📋 Instructions:');
+        console.log('1. Open multiplayer game in 3 browser tabs');
+        console.log('2. Join with 3 different players');
+        console.log('3. Start game and play normally');
+        console.log('4. Close one tab (simulate player leaving)');
+        console.log('5. Verify remaining players can act without "Not your turn" errors');
+    </script>
+</body>
+</html> 

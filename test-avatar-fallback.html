@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Fallback Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .avatar-display {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .avatar-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #FFD700;
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-image.fallback {
+            width: 40px;
+            height: 40px;
+            border-color: #FFC107;
+        }
+
+        .avatar-info {
+            flex: 1;
+        }
+
+        .avatar-url {
+            font-family: monospace;
+            font-size: 12px;
+            color: #FFD700;
+            word-break: break-all;
+            margin: 5px 0;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: rgba(76, 175, 80, 0.3);
+            color: #4CAF50;
+        }
+
+        .status.fallback {
+            background: rgba(255, 193, 7, 0.3);
+            color: #FFC107;
+        }
+
+        .status.error {
+            background: rgba(244, 67, 54, 0.3);
+            color: #F44336;
+        }
+
+        .button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-family: monospace;
+        }
+
+        .test-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+
+        .log-entry.success {
+            color: #4CAF50;
+        }
+
+        .log-entry.warning {
+            color: #FFC107;
+        }
+
+        .log-entry.error {
+            color: #F44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Avatar Fallback Test</h1>
+        
+        <div class="test-section">
+            <h3>📱 Avatar Fallback Function</h3>
+            <p>Test the avatar fallback functionality that uses <code>avatar.png</code> when Telegram/VK avatars are empty or null.</p>
+            
+            <input type="text" id="avatarInput" class="test-input" placeholder="Enter avatar URL to test (or leave empty for null test)">
+            <button class="button" onclick="testAvatarFallback()">Test Avatar Fallback</button>
+            <button class="button" onclick="testAllScenarios()">Test All Scenarios</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🖼️ Avatar Display Test</h3>
+            <div id="avatarDisplay" class="avatar-display">
+                <img src="assets/avatar.png" alt="Default Avatar" class="avatar-image" id="testAvatar">
+                <div class="avatar-info">
+                    <div class="avatar-url" id="avatarUrl">assets/avatar.png</div>
+                    <span class="status success" id="avatarStatus">Default Avatar</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Console Log</h3>
+            <div id="consoleLog" class="log"></div>
+            <button class="button" onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 Game Integration Test</h3>
+            <button class="button" onclick="testGameIntegration()">Test Game Integration</button>
+            <button class="button" onclick="simulateTelegramAvatar()">Simulate Telegram Avatar</button>
+            <button class="button" onclick="simulateVKAvatar()">Simulate VK Avatar</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock console.log to capture logs
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        function addLogEntry(message, type = 'info') {
+            const logDiv = document.getElementById('consoleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogEntry(args.join(' '), 'success');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLogEntry(args.join(' '), 'warning');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogEntry(args.join(' '), 'error');
+        };
+
+        /**
+         * Get safe avatar URL with fallback to avatar.png
+         * @param {string} avatarUrl - The original avatar URL from Telegram/VK
+         * @returns {string} - Safe avatar URL with fallback
+         */
+        function getSafeAvatarUrl(avatarUrl) {
+            // Check if avatar URL is empty, null, undefined, or just whitespace
+            if (!avatarUrl || avatarUrl.trim() === '' || avatarUrl === 'null' || avatarUrl === 'undefined') {
+                console.log('📱 Avatar URL is empty/null, using fallback avatar.png');
+                return 'assets/avatar.png';
+            }
+            
+            // Check if the URL is valid (basic validation)
+            try {
+                const url = new URL(avatarUrl);
+                if (!url.protocol || !url.hostname) {
+                    console.log('📱 Invalid avatar URL format, using fallback avatar.png');
+                    return 'assets/avatar.png';
+                }
+            } catch (error) {
+                console.log('📱 Avatar URL parsing failed, using fallback avatar.png');
+                return 'assets/avatar.png';
+            }
+            
+            console.log('📱 Using provided avatar URL:', avatarUrl);
+            return avatarUrl;
+        }
+
+        function testAvatarFallback() {
+            const input = document.getElementById('avatarInput').value;
+            const result = getSafeAvatarUrl(input);
+            
+            updateAvatarDisplay(result, input);
+            addTestResult(`Input: "${input}" → Result: "${result}"`);
+        }
+
+        function testAllScenarios() {
+            const scenarios = [
+                { input: '', description: 'Empty string' },
+                { input: null, description: 'Null value' },
+                { input: undefined, description: 'Undefined value' },
+                { input: 'null', description: 'String "null"' },
+                { input: 'undefined', description: 'String "undefined"' },
+                { input: '   ', description: 'Whitespace only' },
+                { input: 'invalid-url', description: 'Invalid URL format' },
+                { input: 'https://example.com/avatar.jpg', description: 'Valid URL' },
+                { input: 'https://t.me/avatar.jpg', description: 'Telegram URL' },
+                { input: 'https://vk.com/avatar.jpg', description: 'VK URL' }
+            ];
+
+            addTestResult('🧪 Testing all scenarios:');
+            
+            scenarios.forEach(scenario => {
+                const result = getSafeAvatarUrl(scenario.input);
+                const status = result === 'assets/avatar.png' ? 'FALLBACK' : 'VALID';
+                addTestResult(`  ${scenario.description}: ${status} → "${result}"`);
+            });
+        }
+
+        function updateAvatarDisplay(avatarUrl, originalUrl) {
+            const avatarImg = document.getElementById('testAvatar');
+            const avatarUrlDiv = document.getElementById('avatarUrl');
+            const avatarStatus = document.getElementById('avatarStatus');
+            
+            avatarImg.src = avatarUrl;
+            avatarUrlDiv.textContent = avatarUrl;
+            
+            if (avatarUrl === 'assets/avatar.png') {
+                avatarStatus.textContent = 'Using Fallback (Scale: 0.2)';
+                avatarStatus.className = 'status fallback';
+                avatarImg.classList.add('fallback');
+            } else {
+                avatarStatus.textContent = 'Using Provided URL (Scale: 0.3)';
+                avatarStatus.className = 'status success';
+                avatarImg.classList.remove('fallback');
+            }
+        }
+
+        function addTestResult(message) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultEntry = document.createElement('div');
+            resultEntry.style.margin = '5px 0';
+            resultEntry.style.padding = '5px';
+            resultEntry.style.background = 'rgba(255, 255, 255, 0.1)';
+            resultEntry.style.borderRadius = '3px';
+            resultEntry.textContent = message;
+            resultsDiv.appendChild(resultEntry);
+        }
+
+        function clearLog() {
+            document.getElementById('consoleLog').innerHTML = '';
+        }
+
+        function testGameIntegration() {
+            // Simulate game environment
+            window.appData = {
+                vk_user_id: 123456,
+                telegram_user_id: 789012,
+                userAvatar: getSafeAvatarUrl(''),
+                first_name: 'Test Player'
+            };
+            
+            console.log('🎮 Game integration test:');
+            console.log('📱 appData.userAvatar:', window.appData.userAvatar);
+            console.log('📱 appData.first_name:', window.appData.first_name);
+            
+            addTestResult('🎮 Game integration test completed');
+        }
+
+        function simulateTelegramAvatar() {
+            // Simulate Telegram avatar data
+            const telegramUser = {
+                id: 123456789,
+                first_name: 'Telegram User',
+                photo_url: 'https://t.me/avatar.jpg'
+            };
+            
+            const appData = {
+                telegram_user_id: telegramUser.id,
+                first_name: telegramUser.first_name,
+                userAvatar: getSafeAvatarUrl(telegramUser.photo_url)
+            };
+            
+            console.log('📱 Simulated Telegram avatar:');
+            console.log('📱 Original photo_url:', telegramUser.photo_url);
+            console.log('📱 Processed userAvatar:', appData.userAvatar);
+            
+            updateAvatarDisplay(appData.userAvatar, telegramUser.photo_url);
+            addTestResult('📱 Telegram avatar simulation completed');
+        }
+
+        function simulateVKAvatar() {
+            // Simulate VK avatar data
+            const vkUser = {
+                id: 987654321,
+                first_name: 'VK User',
+                photo_200: 'https://vk.com/avatar.jpg'
+            };
+            
+            const appData = {
+                vk_user_id: vkUser.id,
+                first_name: vkUser.first_name,
+                userAvatar: getSafeAvatarUrl(vkUser.photo_200)
+            };
+            
+            console.log('📱 Simulated VK avatar:');
+            console.log('📱 Original photo_200:', vkUser.photo_200);
+            console.log('📱 Processed userAvatar:', appData.userAvatar);
+            
+            updateAvatarDisplay(appData.userAvatar, vkUser.photo_200);
+            addTestResult('📱 VK avatar simulation completed');
+        }
+
+        // Initialize test
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🖼️ Avatar Fallback Test initialized');
+            addTestResult('✅ Test page loaded successfully');
+            
+            // Test default avatar
+            updateAvatarDisplay('assets/avatar.png', 'Default');
+        });
+    </script>
+</body>
+</html> 

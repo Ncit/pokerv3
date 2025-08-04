@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Card Removal - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #4CAF50;
+        }
+        .status.error {
+            background-color: #f44336;
+        }
+        .status.info {
+            background-color: #2196F3;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        .instructions {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 5px 0;
+        }
+        .step-number {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Card Removal When Player Leaves</h1>
+        
+        <div class="instructions">
+            <h3>📋 Test Instructions:</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                Start the server: <code>cd pokerv2/server && npm run dev</code>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                Open this test page in multiple browser tabs/windows
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                Join the game with different players (at least 2-3 players)
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                Click "Ready" for all players and start the game
+            </div>
+            <div class="step">
+                <span class="step-number">5</span>
+                Wait for cards to be dealt to all players
+            </div>
+            <div class="step">
+                <span class="step-number">6</span>
+                Close one of the browser tabs/windows to simulate a player leaving
+            </div>
+            <div class="step">
+                <span class="step-number">7</span>
+                Verify that the leaving player's cards are removed from the UI in the remaining tabs
+            </div>
+            <div class="step">
+                <span class="step-number">8</span>
+                Verify that the room resets to lobby state and shows the notification
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 Game Interface</h3>
+            <div id="gameContainer">
+                <iframe src="index.html" class="game-frame" id="gameFrame"></iframe>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Test Controls</h3>
+            <button class="test-button" onclick="refreshGame()">🔄 Refresh Game</button>
+            <button class="test-button" onclick="openNewTab()">🆕 Open New Player Tab</button>
+            <button class="test-button" onclick="checkCardRemoval()">✅ Check Card Removal</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Status</h3>
+            <div id="testStatus">
+                <div class="status info">Ready to test card removal functionality</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Expected Behavior</h3>
+            <ul>
+                <li><strong>Cards Hidden Initially:</strong> Player cards should not be visible in lobby state</li>
+                <li><strong>Cards Visible During Game:</strong> Cards should appear when game starts and hands are dealt</li>
+                <li><strong>Cards Removed on Leave:</strong> When a player leaves, their cards should be immediately removed from all other players' screens</li>
+                <li><strong>Room Reset:</strong> The room should reset to lobby state when a player leaves</li>
+                <li><strong>Notification:</strong> A notification should appear saying "Игрок покинул игру. Комната сброшена."</li>
+                <li><strong>Ready Buttons Re-enabled:</strong> Ready buttons should be available again after room reset</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🐛 Troubleshooting</h3>
+            <ul>
+                <li><strong>Cards not removed:</strong> Check browser console for error messages</li>
+                <li><strong>Server connection issues:</strong> Ensure server is running on port 3000</li>
+                <li><strong>Multiple players needed:</strong> Test requires at least 2 players to join</li>
+                <li><strong>Browser cache:</strong> Try hard refresh (Ctrl+F5) if UI doesn't update</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function refreshGame() {
+            const frame = document.getElementById('gameFrame');
+            frame.src = frame.src;
+            updateStatus('Game refreshed', 'info');
+        }
+
+        function openNewTab() {
+            window.open('index.html', '_blank');
+            updateStatus('New player tab opened', 'info');
+        }
+
+        function checkCardRemoval() {
+            updateStatus('Card removal check initiated - verify cards are removed when players leave', 'info');
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('testStatus');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(statusElement);
+            
+            // Keep only last 5 status messages
+            const statusMessages = statusDiv.querySelectorAll('.status');
+            if (statusMessages.length > 5) {
+                statusMessages[0].remove();
+            }
+        }
+
+        // Listen for messages from the game iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'cardRemoval') {
+                updateStatus(`Card removal event: ${event.data.message}`, 'success');
+            }
+        });
+
+        // Auto-refresh status every 30 seconds
+        setInterval(() => {
+            updateStatus('Test session active - monitoring card removal functionality', 'info');
+        }, 30000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button Enable Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f44336;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .debug-info {
+            background-color: #2d1b69;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .debug-info h4 {
+            color: #9c27b0;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔧 Button Enable Debug Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test helps debug the issue where buttons are not enabled even when isMyTurn() returns true.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🐛 Issue Description</h2>
+            <div class="test-description">
+                The user reports that isMyTurn() check is true, but buttons are still not being enabled. This suggests there might be an issue with the button enable logic or additional conditions that are preventing button activation.
+            </div>
+            
+            <div class="debug-info">
+                <h4>Problem Identified:</h4>
+                <div class="code-block">
+// ISSUE: isMyTurn() returns true but buttons not enabled
+// POSSIBLE CAUSES:
+1. Game state not in 'playing' status
+2. Player is marked as spectator
+3. Player has folded or is all-in
+4. Game is in showdown phase
+5. Button creation/initialization issues
+6. Event handler setup problems
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario: Button Enable Debug</h2>
+            <div class="test-description">
+                Test and debug the button enable logic with enhanced logging.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in multiple browser windows</li>
+                    <li>Join as different players</li>
+                    <li>Start the game</li>
+                    <li>Wait for your turn</li>
+                    <li>Check console for detailed button enable logs</li>
+                    <li>Look for the specific condition that's preventing button enable</li>
+                    <li>Use the debug method if needed</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Console Output:</h4>
+                <div class="code-block">
+FastGameScene: updateActionButtons - detailed check: {
+    gameState: {
+        status: "playing",
+        phase: "preflop"
+    },
+    isMyTurn: true,
+    myPlayer: {
+        id: "player1_id",
+        name: "Player1",
+        folded: false,
+        allIn: false,
+        isSpectator: false
+    }
+}
+FastGameScene: All conditions met - enabling action buttons
+FastGameScene: Basic action buttons enabled - it is my turn
+FastGameScene: Raise button enabled - raises still allowed
+FastGameScene: Final button interactivity check: {
+    foldButton: true,
+    callButton: true,
+    raiseButton: true,
+    allInButton: true
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Enhanced Debugging Applied</h2>
+            <div class="test-description">
+                Added comprehensive debugging to identify the exact cause of button enable issues:
+            </div>
+            
+            <div class="expected-result">
+                <h4>Enhanced updateActionButtons() Method:</h4>
+                <div class="code-block">
+updateActionButtons() {
+    // Check if game state exists and is in playing status
+    if (!this.gameState) {
+        console.log('FastGameScene: No game state available - disabling all actions');
+        this.disablePlayerActions();
+        return;
+    }
+    
+    if (this.gameState.status !== 'playing') {
+        console.log('FastGameScene: Game not in playing status - disabling all actions');
+        this.disablePlayerActions();
+        return;
+    }
+    
+    const isMyTurn = this.networkManager.isMyTurn();
+    const myPlayer = this.networkManager.getMyPlayer();
+    
+    console.log('FastGameScene: updateActionButtons - detailed check:', {
+        gameState: this.gameState ? {
+            status: this.gameState.status,
+            phase: this.gameState.phase
+        } : null,
+        isMyTurn,
+        myPlayer: myPlayer ? {
+            id: myPlayer.id,
+            name: myPlayer.name,
+            folded: myPlayer.folded,
+            allIn: myPlayer.allIn,
+            isSpectator: myPlayer.isSpectator
+        } : null
+    });
+    
+    // ... rest of the logic with detailed logging
+}
+                </div>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Debug Method Added:</h4>
+                <div class="code-block">
+// Debug method to force enable buttons
+forceEnableButtons() {
+    console.log('FastGameScene: FORCE ENABLING ALL BUTTONS (DEBUG)');
+    
+    // Force enable all buttons
+    this.foldButton.setInteractive();
+    this.callButton.setInteractive();
+    this.raiseButton.setInteractive();
+    this.allInButton.setInteractive();
+    
+    // Reset text colors
+    this.foldButtonText.setFill('#ffffff');
+    this.callButtonText.setFill('#ffffff');
+    this.raiseButtonText.setFill('#ffffff');
+    this.allInButtonText.setFill('#ffffff');
+    
+    console.log('FastGameScene: All buttons force-enabled');
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Troubleshooting Guide</h2>
+            <div class="test-description">
+                Use this guide to identify the specific issue preventing button enable:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li><strong>Check Game State:</strong> Look for "No game state available" or "Game not in playing status"</li>
+                    <li><strong>Check Player State:</strong> Verify player is not folded, all-in, or spectator</li>
+                    <li><strong>Check Game Phase:</strong> Ensure game is not in showdown phase</li>
+                    <li><strong>Check Turn State:</strong> Verify isMyTurn() is actually returning true</li>
+                    <li><strong>Check Button Creation:</strong> Ensure buttons exist and have input components</li>
+                    <li><strong>Check Event Handlers:</strong> Verify button click handlers are properly set up</li>
+                    <li><strong>Use Debug Method:</strong> Call forceEnableButtons() to test if buttons can be enabled</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Common Issues and Solutions</h2>
+            <div class="warning">
+                <strong>Common Button Enable Issues:</strong>
+                <ul>
+                    <li><strong>Game State Issues:</strong> Game not in 'playing' status or missing game state</li>
+                    <li><strong>Player State Issues:</strong> Player marked as spectator, folded, or all-in</li>
+                    <li><strong>Game Phase Issues:</strong> Game in showdown phase when buttons should be enabled</li>
+                    <li><strong>Timing Issues:</strong> Buttons updated before game state is fully loaded</li>
+                    <li><strong>Button Creation Issues:</strong> Buttons not properly created or initialized</li>
+                    <li><strong>Event Handler Issues:</strong> Click handlers not properly attached</li>
+                    <li><strong>Reconnection Issues:</strong> Button state not properly restored after reconnection</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Debug Commands</h2>
+            <div class="test-description">
+                Use these debug commands in the browser console to troubleshoot:
+            </div>
+            
+            <div class="debug-info">
+                <h4>Console Debug Commands:</h4>
+                <div class="code-block">
+// Check game state
+console.log('Game State:', window.game.scene.scenes[0].gameState);
+
+// Check if it's my turn
+console.log('Is My Turn:', window.game.scene.scenes[0].networkManager.isMyTurn());
+
+// Check my player
+console.log('My Player:', window.game.scene.scenes[0].networkManager.getMyPlayer());
+
+// Force enable buttons (debug method)
+window.game.scene.scenes[0].forceEnableButtons();
+
+// Check button interactivity
+console.log('Button Status:', {
+    foldButton: window.game.scene.scenes[0].foldButton.input ? window.game.scene.scenes[0].foldButton.input.enabled : 'no input',
+    callButton: window.game.scene.scenes[0].callButton.input ? window.game.scene.scenes[0].callButton.input.enabled : 'no input',
+    raiseButton: window.game.scene.scenes[0].raiseButton.input ? window.game.scene.scenes[0].raiseButton.input.enabled : 'no input',
+    allInButton: window.game.scene.scenes[0].allInButton.input ? window.game.scene.scenes[0].allInButton.input.enabled : 'no input'
+});
+
+// Manually trigger button update
+window.game.scene.scenes[0].updateActionButtons();
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">✅ Verification Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify button enable functionality:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ Console shows detailed button enable logs</li>
+                    <li>✅ Game state is in 'playing' status</li>
+                    <li>✅ Game is not in showdown phase</li>
+                    <li>✅ Player is not spectator, folded, or all-in</li>
+                    <li>✅ isMyTurn() returns true</li>
+                    <li>✅ Buttons are properly created and have input components</li>
+                    <li>✅ Button click handlers are attached</li>
+                    <li>✅ Button interactivity status shows buttons as enabled</li>
+                    <li>✅ Buttons are actually clickable</li>
+                    <li>✅ Debug method can force enable buttons if needed</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Next Steps</h2>
+            <div class="test-description">
+                After identifying the specific issue:
+            </div>
+            
+            <div class="success">
+                <strong>If Issue is Identified:</strong>
+                <ul>
+                    <li>Fix the specific condition preventing button enable</li>
+                    <li>Test the fix in different game scenarios</li>
+                    <li>Verify button enable works consistently</li>
+                    <li>Remove debug logging if no longer needed</li>
+                </ul>
+            </div>
+            
+            <div class="error">
+                <strong>If Issue Persists:</strong>
+                <ul>
+                    <li>Check for race conditions in game state updates</li>
+                    <li>Review button creation and initialization process</li>
+                    <li>Verify event handler setup and timing</li>
+                    <li>Check for conflicts with other UI update methods</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

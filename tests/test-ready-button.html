@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ready Button - Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            background-color: #444;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 10px;
+        }
+        .game-container {
+            border: 2px solid #666;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .status {
+            background-color: #333;
+            padding: 10px;
+            border-bottom: 1px solid #666;
+        }
+        .status.connected {
+            background-color: #2d5a2d;
+        }
+        .status.disconnected {
+            background-color: #5a2d2d;
+        }
+        .console {
+            background-color: #000;
+            color: #00ff00;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Ready Button Functionality</h1>
+        
+        <div class="test-info">
+            <h2>Test Objective</h2>
+            <p>Verify that the ready button is clickable after connecting to the room and joining the game.</p>
+        </div>
+        
+        <div class="test-steps">
+            <h2>Test Steps</h2>
+            <ol>
+                <li><strong>Start the server:</strong> Run <code>node server/server.js</code> from the pokerv2 directory</li>
+                <li><strong>Load this page:</strong> Open this test page in your browser</li>
+                <li><strong>Check connection:</strong> Verify that the game connects to the server successfully</li>
+                <li><strong>Look for ready button:</strong> The ready button should appear in the lobby state</li>
+                <li><strong>Test clicking:</strong> Try clicking the ready button - it should be interactive</li>
+                <li><strong>Check console:</strong> Look for any error messages in the browser console</li>
+                <li><strong>Verify functionality:</strong> The ready button should toggle the player's ready status</li>
+            </ol>
+        </div>
+        
+        <div class="status" id="status">Status: Initializing...</div>
+        
+        <div class="game-container">
+            <div id="game"></div>
+        </div>
+        
+        <div class="console" id="console">
+            <div>Console output will appear here...</div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="button" onclick="clearConsole()">Clear Console</button>
+            <button class="button" onclick="checkReadyButton()">Check Ready Button State</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock VK app data for testing
+        window.appData = {
+            first_name: 'TestPlayer',
+            userAvatar: 'https://gravatar.com/avatar/test?s=400&d=robohash&r=x',
+            vk_user_id: 12345
+        };
+        
+        // Enable debug mode
+        window.isDebug = true;
+        
+        // Console logging
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearConsole() {
+            consoleDiv.innerHTML = '<div>Console cleared...</div>';
+        }
+        
+        function updateStatus(message, isConnected = false) {
+            statusDiv.textContent = `Status: ${message}`;
+            statusDiv.className = `status ${isConnected ? 'connected' : 'disconnected'}`;
+        }
+        
+        function checkReadyButton() {
+            const gameDiv = document.getElementById('game');
+            const readyButton = gameDiv.querySelector('[data-button="ready"]') || 
+                               gameDiv.querySelector('button') ||
+                               gameDiv.querySelector('.ready-button');
+            
+            if (readyButton) {
+                const isVisible = readyButton.style.display !== 'none' && 
+                                 readyButton.style.visibility !== 'hidden' &&
+                                 !readyButton.classList.contains('hidden');
+                const isInteractive = readyButton.style.pointerEvents !== 'none' &&
+                                     !readyButton.disabled;
+                
+                log(`Ready button found: visible=${isVisible}, interactive=${isInteractive}`);
+                log(`Button element: ${readyButton.outerHTML}`);
+            } else {
+                log('Ready button not found in DOM');
+                
+                // Try to find any buttons in the game
+                const allButtons = gameDiv.querySelectorAll('button, [data-button], .button');
+                log(`Found ${allButtons.length} buttons in game container`);
+                allButtons.forEach((btn, index) => {
+                    log(`Button ${index}: ${btn.outerHTML}`);
+                });
+            }
+        }
+        
+        // Override console methods to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log('LOG: ' + args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log('WARN: ' + args.join(' '));
+        };
+        
+        // Initialize
+        log('Test page loaded');
+        updateStatus('Loading game...');
+        
+        // Load Phaser and game
+        const script = document.createElement('script');
+        script.src = 'dependencies/phaser.js';
+        script.onload = function() {
+            log('Phaser loaded');
+            
+            const rexScript = document.createElement('script');
+            rexScript.src = 'dependencies/rexui.js';
+            rexScript.onload = function() {
+                log('RexUI loaded');
+                
+                const mainScript = document.createElement('script');
+                mainScript.src = 'client/src/main.js';
+                mainScript.onload = function() {
+                    log('Main game script loaded');
+                    updateStatus('Game loaded, connecting to server...');
+                    
+                    // Start the game after a short delay
+                    setTimeout(() => {
+                        log('Starting game...');
+                        // The game should automatically start and connect
+                    }, 1000);
+                };
+                document.head.appendChild(mainScript);
+            };
+            document.head.appendChild(rexScript);
+        };
+        document.head.appendChild(script);
+        
+        // Monitor for connection status
+        setInterval(() => {
+            const gameDiv = document.getElementById('game');
+            if (gameDiv && gameDiv.children.length > 0) {
+                // Check if we can find any connection status indicators
+                const statusTexts = gameDiv.querySelectorAll('text');
+                statusTexts.forEach(text => {
+                    if (text.textContent && text.textContent.includes('Connected')) {
+                        updateStatus('Connected to server', true);
+                    } else if (text.textContent && text.textContent.includes('Connecting')) {
+                        updateStatus('Connecting to server...');
+                    } else if (text.textContent && text.textContent.includes('Disconnected')) {
+                        updateStatus('Disconnected from server');
+                    }
+                });
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 

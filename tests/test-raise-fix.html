@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raise Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .game-info {
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Raise Fix Test</h1>
+        <p>This page tests if the raise functionality is working correctly after the fix.</p>
+        
+        <div id="status" class="status info">Initializing...</div>
+        
+        <div>
+            <button id="connectBtn" onclick="connectToServer()">Connect to Server</button>
+            <button id="joinBtn" onclick="joinGame()" disabled>Join Game</button>
+            <button id="disconnectBtn" onclick="disconnectFromServer()" disabled>Disconnect</button>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="foldBtn" onclick="testFold()" disabled>Fold</button>
+            <button id="callBtn" onclick="testCall()" disabled>Call/Check</button>
+            <button id="raiseBtn" onclick="testRaise()" disabled>Raise</button>
+            <button id="allInBtn" onclick="testAllIn()" disabled>All-In</button>
+        </div>
+        
+        <div>
+            <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="game-info">
+            <h3>Game Information:</h3>
+            <div id="gameInfo">Not connected</div>
+        </div>
+        
+        <h3>Event Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // Mock window.appData for testing
+        window.appData = {
+            first_name: 'Test Player',
+            userAvatar: 'https://gravatar.com/avatar/test?s=400&d=robohash&r=x',
+            vk_user_id: 12345
+        };
+        
+        // Mock window.isDebug
+        window.isDebug = true;
+        
+        let networkManager = null;
+        let isConnected = false;
+        let gameState = null;
+        let myPlayer = null;
+        
+        // Import the NetworkManager
+        import('./client/src/managers/NetworkManager.js').then(({ NetworkManager }) => {
+            networkManager = new NetworkManager();
+            updateStatus('NetworkManager loaded successfully', 'success');
+            document.getElementById('connectBtn').disabled = false;
+        }).catch(error => {
+            updateStatus('Failed to load NetworkManager: ' + error.message, 'error');
+            log('Error loading NetworkManager:', error);
+        });
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            log(`[STATUS] ${message}`);
+        }
+        
+        function updateGameInfo() {
+            const gameInfoDiv = document.getElementById('gameInfo');
+            if (!gameState) {
+                gameInfoDiv.innerHTML = 'Not connected';
+                return;
+            }
+            
+            let info = `
+                <strong>Game Status:</strong> ${gameState.status}<br>
+                <strong>Phase:</strong> ${gameState.phase}<br>
+                <strong>Current Bet:</strong> $${gameState.currentBet}<br>
+                <strong>Pot:</strong> $${gameState.pot}<br>
+                <strong>Big Blind:</strong> $${gameState.bigBlind || 20}<br>
+                <strong>Players:</strong> ${gameState.players ? gameState.players.length : 0}<br>
+            `;
+            
+            if (myPlayer) {
+                info += `
+                    <strong>My Bank:</strong> $${myPlayer.bank}<br>
+                    <strong>My Current Bet:</strong> $${myPlayer.currentBet}<br>
+                    <strong>My Turn:</strong> ${networkManager.isMyTurn() ? 'Yes' : 'No'}<br>
+                    <strong>Can Act:</strong> ${!myPlayer.folded && !myPlayer.allIn ? 'Yes' : 'No'}<br>
+                `;
+            }
+            
+            gameInfoDiv.innerHTML = info;
+        }
+        
+        function log(...args) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = `[${timestamp}] ${args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ')}`;
+            logDiv.innerHTML += message + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function updateActionButtons() {
+            const isMyTurn = networkManager && networkManager.isMyTurn();
+            const canAct = myPlayer && !myPlayer.folded && !myPlayer.allIn;
+            const isPlaying = gameState && gameState.status === 'playing';
+            
+            const buttons = ['foldBtn', 'callBtn', 'raiseBtn', 'allInBtn'];
+            buttons.forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                btn.disabled = !(isMyTurn && canAct && isPlaying);
+            });
+        }
+        
+        window.connectToServer = async function() {
+            if (!networkManager) {
+                updateStatus('NetworkManager not loaded', 'error');
+                return;
+            }
+            
+            try {
+                updateStatus('Connecting to server...', 'info');
+                document.getElementById('connectBtn').disabled = true;
+                
+                await networkManager.connect();
+                isConnected = true;
+                
+                updateStatus('Connected to server successfully', 'success');
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = false;
+                
+                // Set up event listeners
+                networkManager.on('gameJoined', (data) => {
+                    log('✅ Game joined event received:', data);
+                    gameState = data.gameState;
+                    myPlayer = data.players.find(p => p.id === data.playerId);
+                    updateGameInfo();
+                    updateActionButtons();
+                });
+                
+                networkManager.on('gameStateChanged', (data) => {
+                    log('✅ Game state changed event received:', data);
+                    gameState = data.gameState;
+                    myPlayer = networkManager.getMyPlayer();
+                    updateGameInfo();
+                    updateActionButtons();
+                    
+                    if (data.lastAction) {
+                        log('🎯 Last action:', data.lastAction);
+                    }
+                });
+                
+                networkManager.on('playerJoined', (data) => {
+                    log('✅ Player joined event received:', data);
+                });
+                
+                networkManager.on('playerLeft', (data) => {
+                    log('✅ Player left event received:', data);
+                });
+                
+                networkManager.on('networkError', (data) => {
+                    log('❌ Network error event received:', data);
+                    updateStatus('Network error: ' + data.message, 'error');
+                });
+                
+                networkManager.on('disconnected', (data) => {
+                    log('✅ Disconnected event received:', data);
+                    updateStatus('Disconnected from server', 'info');
+                    isConnected = false;
+                    gameState = null;
+                    myPlayer = null;
+                    document.getElementById('joinBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('connectBtn').disabled = false;
+                    updateGameInfo();
+                    updateActionButtons();
+                });
+                
+            } catch (error) {
+                updateStatus('Connection failed: ' + error.message, 'error');
+                log('Connection error:', error);
+                document.getElementById('connectBtn').disabled = false;
+            }
+        };
+        
+        window.joinGame = function() {
+            if (!networkManager || !isConnected) {
+                updateStatus('Not connected to server', 'error');
+                return;
+            }
+            
+            try {
+                const playerData = {
+                    name: window.appData.first_name,
+                    avatarUrl: window.appData.userAvatar ,
+                    bank: 1000,
+                    vk_user_id: window.appData.vk_user_id
+                };
+                
+                log('Joining game with player data:', playerData);
+                networkManager.joinGame(playerData);
+                updateStatus('Joining game...', 'info');
+                
+            } catch (error) {
+                updateStatus('Failed to join game: ' + error.message, 'error');
+                log('Join game error:', error);
+            }
+        };
+        
+        window.disconnectFromServer = function() {
+            if (!networkManager) {
+                updateStatus('NetworkManager not loaded', 'error');
+                return;
+            }
+            
+            try {
+                networkManager.disconnect();
+                isConnected = false;
+                gameState = null;
+                myPlayer = null;
+                updateStatus('Disconnected from server', 'info');
+                document.getElementById('joinBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('connectBtn').disabled = false;
+                updateGameInfo();
+                updateActionButtons();
+                
+            } catch (error) {
+                updateStatus('Disconnect error: ' + error.message, 'error');
+                log('Disconnect error:', error);
+            }
+        };
+        
+        window.testFold = function() {
+            if (!canPerformAction()) return;
+            
+            try {
+                log('🧪 Testing fold action...');
+                networkManager.sendPokerAction('fold');
+                updateStatus('Fold action sent successfully', 'success');
+                
+            } catch (error) {
+                updateStatus('Failed to send fold action: ' + error.message, 'error');
+                log('Fold error:', error);
+            }
+        };
+        
+        window.testCall = function() {
+            if (!canPerformAction()) return;
+            
+            try {
+                const currentBet = gameState.currentBet;
+                const callAmount = currentBet - myPlayer.currentBet;
+                
+                log('🧪 Testing call/check action...');
+                log('Call calculation:', {
+                    currentBet,
+                    myCurrentBet: myPlayer.currentBet,
+                    callAmount
+                });
+                
+                if (callAmount <= 0) {
+                    networkManager.sendPokerAction('check');
+                    updateStatus('Check action sent successfully', 'success');
+                } else {
+                    networkManager.sendPokerAction('call', callAmount);
+                    updateStatus('Call action sent successfully', 'success');
+                }
+                
+            } catch (error) {
+                updateStatus('Failed to send call action: ' + error.message, 'error');
+                log('Call error:', error);
+            }
+        };
+        
+        window.testRaise = function() {
+            if (!canPerformAction()) return;
+            
+            try {
+                let totalBetAmount;
+                
+                if (gameState.currentBet === 0) {
+                    // No current bet, so minimum raise is big blind
+                    totalBetAmount = gameState.bigBlind || 20;
+                } else {
+                    // Current bet exists, so raise must be at least current bet + 10
+                    totalBetAmount = gameState.currentBet + 10;
+                }
+                
+                // Ensure we don't exceed player's bank
+                totalBetAmount = Math.min(totalBetAmount, myPlayer.bank);
+                
+                // Calculate the additional amount needed
+                const additionalAmount = totalBetAmount - myPlayer.currentBet;
+                
+                log('🧪 Testing raise action...');
+                log('Raise calculation:', {
+                    currentBet: gameState.currentBet,
+                    myCurrentBet: myPlayer.currentBet,
+                    totalBetAmount,
+                    additionalAmount,
+                    myBank: myPlayer.bank
+                });
+                
+                networkManager.sendPokerAction('raise', totalBetAmount);
+                updateStatus('Raise action sent successfully', 'success');
+                
+            } catch (error) {
+                updateStatus('Failed to send raise action: ' + error.message, 'error');
+                log('Raise error:', error);
+            }
+        };
+        
+        window.testAllIn = function() {
+            if (!canPerformAction()) return;
+            
+            try {
+                log('🧪 Testing all-in action...');
+                log('All-in calculation:', {
+                    currentBet: gameState.currentBet,
+                    myCurrentBet: myPlayer.currentBet,
+                    myBank: myPlayer.bank
+                });
+                
+                networkManager.sendPokerAction('allIn', myPlayer.bank);
+                updateStatus('All-in action sent successfully', 'success');
+                
+            } catch (error) {
+                updateStatus('Failed to send all-in action: ' + error.message, 'error');
+                log('All-in error:', error);
+            }
+        };
+        
+        function canPerformAction() {
+            if (!networkManager || !isConnected) {
+                updateStatus('Not connected to server', 'error');
+                return false;
+            }
+            
+            if (!gameState || gameState.status !== 'playing') {
+                updateStatus('Game is not in playing state', 'error');
+                return false;
+            }
+            
+            if (!networkManager.isMyTurn()) {
+                updateStatus('Not your turn', 'error');
+                return false;
+            }
+            
+            if (!myPlayer) {
+                updateStatus('Player information not available', 'error');
+                return false;
+            }
+            
+            if (myPlayer.folded || myPlayer.allIn) {
+                updateStatus('Cannot act - player folded or all-in', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Update buttons periodically
+        setInterval(updateActionButtons, 1000);
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (networkManager) {
+                networkManager.cleanup();
+            }
+        });
+    </script>
+</body>
+</html> 

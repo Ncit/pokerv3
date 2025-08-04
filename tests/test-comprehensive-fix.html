@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Fix Test - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .fix-details {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+        .instructions {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+        }
+        .expected-results {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+        .code-block {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #f39c12;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .test-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .test-link {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .test-link:hover {
+            background: #2980b9;
+        }
+        .server-status {
+            background: #2c2c2c;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #9b59b6;
+        }
+        .fix-list {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #8e44ad;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 Comprehensive Fix Test</h1>
+            <h2>Multiplayer Poker - Infinite Loop & Raise Calculation Fixes</h2>
+            <p>Testing both the infinite loop fix and the raise calculation fix</p>
+        </div>
+
+        <div class="server-status">
+            <h3>🌐 Server Status</h3>
+            <p><strong>Server URL:</strong> <span class="highlight">http://localhost:3000</span></p>
+            <p><strong>Status:</strong> <span id="serverStatus" class="warning">Checking...</span></p>
+            <button onclick="checkServerStatus()">Check Server Status</button>
+        </div>
+
+        <div class="fix-list">
+            <h3>🔧 Fixes Applied</h3>
+            <ol>
+                <li><strong>Infinite Loop Fix:</strong>
+                    <ul>
+                        <li>Added showdown phase protection in <code>nextPhase()</code></li>
+                        <li>Added showdown phase check in <code>startBettingRound()</code></li>
+                        <li>Improved river phase completion logic</li>
+                        <li>Added comprehensive debug logging</li>
+                    </ul>
+                </li>
+                <li><strong>Raise Calculation Fix:</strong>
+                    <ul>
+                        <li>Added default big blind value (20) if not defined</li>
+                        <li>Added validation for NaN values in raise calculations</li>
+                        <li>Included betting configuration in game state</li>
+                        <li>Improved error handling for invalid raise amounts</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="fix-details">
+            <h3>🔧 Fix Details</h3>
+            
+            <h4>1. Infinite Loop Fix:</h4>
+            <p>The infinite loop was caused by circular calls between betting round methods when transitioning to showdown. Fixed by:</p>
+            
+            <div class="code-block">
+// Added protection in nextPhase()
+if (this.phase === 'showdown') {
+    console.log('PokerGame: Already in showdown phase, no further transitions needed');
+    return;
+}
+
+// Added protection in startBettingRound()
+if (this.phase === 'showdown') {
+    console.log('PokerGame: Cannot start betting round in showdown phase');
+    return;
+}
+
+// Improved river phase completion
+const shouldComplete = (allBetsEqual && allHaveActed) || allAllIn || (this.phase === 'river' && allBetsEqual);
+            </div>
+
+            <h4>2. Raise Calculation Fix:</h4>
+            <p>The raise calculation was failing due to undefined bigBlind values and NaN calculations. Fixed by:</p>
+            
+            <div class="code-block">
+// Added default big blind value
+const bigBlind = this.gameState.bigBlind || 20;
+
+// Added validation for NaN values
+if (isNaN(totalBetAmount) || totalBetAmount <= 0) {
+    console.error('FastGameScene: Invalid raise amount calculated:', totalBetAmount);
+    return;
+}
+
+// Included betting configuration in server state
+getPublicState() {
+    return {
+        // ... other properties
+        smallBlind: this.smallBlind,
+        bigBlind: this.bigBlind,
+        minBet: this.minBet,
+        // ... rest of properties
+    };
+}
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Test Instructions</h3>
+            <ol>
+                <li><strong>Start the server:</strong>
+                    <div class="code-block">cd pokerv2/server && npm run dev</div>
+                </li>
+                <li><strong>Open multiple test pages:</strong> Use the links below to open 3 different browser windows/tabs</li>
+                <li><strong>Join the game:</strong> All players will automatically join the main room</li>
+                <li><strong>Set all players ready:</strong> Click "ГОТОВ" for each player</li>
+                <li><strong>Start the game:</strong> Click "НАЧАТЬ РАЗДАЧУ" when all players are ready</li>
+                <li><strong>Test Scenario 1 - Infinite Loop Fix:</strong>
+                    <ul>
+                        <li>Preflop: All players call (no raises)</li>
+                        <li>Flop: All players check</li>
+                        <li>Turn: All players check</li>
+                        <li>River: All players check</li>
+                        <li><strong>Expected:</strong> Game should transition to showdown without infinite loops</li>
+                    </ul>
+                </li>
+                <li><strong>Test Scenario 2 - Raise Calculation Fix:</strong>
+                    <ul>
+                        <li>Try using the raise button in any betting round</li>
+                        <li><strong>Expected:</strong> No NaN errors, proper raise amounts calculated</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="expected-results">
+            <h3>✅ Expected Results</h3>
+            
+            <h4>Infinite Loop Fix:</h4>
+            <ul>
+                <li><span class="success">✓</span> No infinite loops when all players check after river</li>
+                <li><span class="success">✓</span> Smooth transition from river to showdown</li>
+                <li><span class="success">✓</span> Hand evaluation occurs properly</li>
+                <li><span class="success">✓</span> "СЛЕДУЮЩИЙ РАУНД" button appears</li>
+            </ul>
+
+            <h4>Raise Calculation Fix:</h4>
+            <ul>
+                <li><span class="success">✓</span> No "Raise must be greater than current bet" errors</li>
+                <li><span class="success">✓</span> No NaN values in raise calculations</li>
+                <li><span class="success">✓</span> Proper raise amounts calculated</li>
+                <li><span class="success">✓</span> All-in works correctly when insufficient funds</li>
+            </ul>
+
+            <h4>Console Logs to Look For:</h4>
+            <div class="code-block">
+// Server side - Infinite Loop Fix:
+PokerGame: River phase betting complete: true
+PokerGame: Betting round complete, moving to next phase
+PokerGame: Phase transition: river → showdown
+PokerGame: Already in showdown phase, no further transitions needed
+
+// Client side - Raise Calculation Fix:
+FastGameScene: Raise calculation: {
+    currentBet: 0,
+    myCurrentBet: 0,
+    totalBetAmount: 20,
+    additionalAmount: 20,
+    myBank: 1000,
+    bigBlind: 20
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Pages</h3>
+            <div class="test-links">
+                <a href="../index.html?debug=true&player=1" class="test-link" target="_blank">Player 1 (Никита)</a>
+                <a href="../index.html?debug=true&player=2" class="test-link" target="_blank">Player 2 (Анна)</a>
+                <a href="../index.html?debug=true&player=3" class="test-link" target="_blank">Player 3 (Михаил)</a>
+            </div>
+            
+            <h4>Alternative Test Pages:</h4>
+            <div class="test-links">
+                <a href="test-infinite-loop-fix-v2.html" class="test-link" target="_blank">Infinite Loop Fix Test v2</a>
+                <a href="test-infinite-loop-fix.html" class="test-link" target="_blank">Original Infinite Loop Test</a>
+                <a href="test-three-players-allin.html" class="test-link" target="_blank">Three Players All-In Test</a>
+                <a href="test-card-manager-fix.html" class="test-link" target="_blank">Card Manager Fix Test</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Debug Information</h3>
+            <p>Open browser developer tools (F12) and check the console for detailed logs:</p>
+            <ul>
+                <li><strong>Server logs:</strong> Look for betting round completion and phase transition messages</li>
+                <li><strong>Client logs:</strong> Check for raise calculations and game state updates</li>
+                <li><strong>Network logs:</strong> Monitor WebSocket communication for errors</li>
+            </ul>
+            
+            <h4>Key Log Messages:</h4>
+            <div class="code-block">
+// Server side:
+PokerGame: Post-flop betting complete: true
+PokerGame: Betting round complete, moving to next phase
+PokerGame: Phase transition: river → showdown
+PokerGame: Already in showdown phase, no further transitions needed
+
+// Client side:
+FastGameScene: Raise calculation: {currentBet: 0, totalBetAmount: 20, bigBlind: 20}
+NetworkManager: Sending poker action: {action: 'raise', amount: 20}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚨 Troubleshooting</h3>
+            <ul>
+                <li><strong>Server not starting:</strong> Check if port 3000 is already in use</li>
+                <li><strong>Players can't join:</strong> Ensure server is running and accessible</li>
+                <li><strong>Infinite loop still occurs:</strong> Check console for "Already in showdown phase" messages</li>
+                <li><strong>Raise errors still occur:</strong> Check if bigBlind is included in game state</li>
+                <li><strong>Game doesn't progress:</strong> Verify all players are ready and game started</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkServerStatus() {
+            const statusElement = document.getElementById('serverStatus');
+            statusElement.textContent = 'Checking...';
+            statusElement.className = 'warning';
+            
+            fetch('http://localhost:3000/health', { method: 'GET' })
+                .then(response => {
+                    if (response.ok) {
+                        statusElement.textContent = 'Online';
+                        statusElement.className = 'success';
+                    } else {
+                        statusElement.textContent = 'Error: ' + response.status;
+                        statusElement.className = 'error';
+                    }
+                })
+                .catch(error => {
+                    statusElement.textContent = 'Offline';
+                    statusElement.className = 'error';
+                });
+        }
+
+        // Check server status on page load
+        window.addEventListener('load', checkServerStatus);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bot Call Button Fix Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            background-color: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 10px;
+        }
+        .game-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .debug-info {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            background-color: #2a5a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .error {
+            background-color: #5a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Bot Call Button Fix Test</h1>
+        
+        <div class="test-info">
+            <h3>Test Purpose</h3>
+            <p>This test verifies that the AI Bot Scene call button works correctly and doesn't freeze the game after the first call action.</p>
+        </div>
+        
+        <div class="test-steps">
+            <h3>Test Steps</h3>
+            <ol>
+                <li><strong>Start the game:</strong> The AI Bot Scene should load with 2 AI players and 1 human player</li>
+                <li><strong>Wait for your turn:</strong> The human player should be highlighted in green when it's their turn</li>
+                <li><strong>Click Call button:</strong> The call button should work and the game should continue</li>
+                <li><strong>Verify AI turns:</strong> AI players should take their turns automatically</li>
+                <li><strong>Wait for next human turn:</strong> When it's the human player's turn again, buttons should be clickable</li>
+                <li><strong>Test multiple actions:</strong> Try different actions (fold, raise, all-in) to ensure they all work</li>
+            </ol>
+        </div>
+        
+        <div class="game-container">
+            <div id="game"></div>
+        </div>
+        
+        <div class="debug-info" id="debugInfo">
+            <strong>Debug Information:</strong><br>
+            <div id="debugContent">Loading...</div>
+        </div>
+        
+        <div class="status" id="status">
+            <strong>Status:</strong> Initializing...
+        </div>
+    </div>
+
+    <!-- Phaser and dependencies -->
+    <script src="dependencies/phaser.js"></script>
+    <script src="dependencies/rexui.js"></script>
+    <script src="dependencies/vkbridge.js"></script>
+    
+    <!-- Game scripts -->
+    <script src="client/src/config/AssetConfig.js"></script>
+    <script src="client/src/config/ButtonConfig.js"></script>
+    <script src="client/src/config/GameConfig.js"></script>
+    <script src="client/src/config/PlayerConfig.js"></script>
+    <script src="client/src/utils/AssetHelper.js"></script>
+    <script src="client/src/utils/EventManager.js"></script>
+    <script src="client/src/utils/HandEvaluator.js"></script>
+    <script src="client/src/utils/PositionCalculator.js"></script>
+    <script src="client/src/managers/ButtonManager.js"></script>
+    <script src="client/src/managers/CardManager.js"></script>
+    <script src="client/src/managers/PlayerManager.js"></script>
+    <script src="client/src/managers/UIManager.js"></script>
+    <script src="client/src/scenes/AIBotScene.js"></script>
+    <script src="client/src/scenes/LoadingScene.js"></script>
+    <script src="client/src/scenes/LobbyScene.js"></script>
+    <script src="client/src/scripts/vklogic.js"></script>
+    <script src="client/src/main.js"></script>
+
+    <script>
+        // Test configuration
+        window.isDebug = true;
+        window.appData = {
+            first_name: 'Test',
+            vk_user_id: '12345'
+        };
+
+        // Debug logging
+        const debugContent = document.getElementById('debugContent');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugContent.scrollTop = debugContent.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, isError = false) {
+            statusDiv.innerHTML = `<strong>Status:</strong> ${message}`;
+            statusDiv.className = isError ? 'error' : 'status';
+        }
+
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log('LOG: ' + args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log('WARN: ' + args.join(' '));
+        };
+
+        // Test specific logging for AI Bot Scene
+        let originalStartBettingRound;
+        let originalHandleCall;
+        let originalNextPlayer;
+
+        // Wait for the game to load
+        window.addEventListener('load', () => {
+            log('Page loaded, waiting for Phaser to initialize...');
+            
+            // Monitor for AI Bot Scene creation
+            const checkForScene = setInterval(() => {
+                if (window.game && window.game.scene && window.game.scene.getScene('AIBotScene')) {
+                    clearInterval(checkForScene);
+                    log('AI Bot Scene detected, setting up test monitoring...');
+                    setupTestMonitoring();
+                }
+            }, 100);
+        });
+
+        function setupTestMonitoring() {
+            const scene = window.game.scene.getScene('AIBotScene');
+            
+            if (!scene) {
+                log('ERROR: AI Bot Scene not found');
+                return;
+            }
+
+            // Monitor key methods
+            originalStartBettingRound = scene.startBettingRound;
+            originalHandleCall = scene.handleCall;
+            originalNextPlayer = scene.nextPlayer;
+
+            scene.startBettingRound = function() {
+                log('🎯 startBettingRound called - current player: ' + this.gameState.currentPlayer);
+                const currentPlayer = this.gameState.players[this.gameState.currentPlayer];
+                log('🎯 Current player: ' + currentPlayer.name + ' (AI: ' + currentPlayer.isAI + ')');
+                
+                const result = originalStartBettingRound.call(this);
+                
+                // Check button states
+                const buttonsEnabled = this.foldButton.input && this.foldButton.input.enabled;
+                log('🎯 Buttons enabled: ' + buttonsEnabled);
+                
+                return result;
+            };
+
+            scene.handleCall = function() {
+                log('📞 handleCall called');
+                const result = originalHandleCall.call(this);
+                log('📞 handleCall completed');
+                return result;
+            };
+
+            scene.nextPlayer = function() {
+                log('➡️ nextPlayer called');
+                const result = originalNextPlayer.call(this);
+                log('➡️ nextPlayer completed');
+                return result;
+            };
+
+            // Monitor button clicks
+            const originalFold = scene.handleFold;
+            const originalRaise = scene.handleRaise;
+            const originalAllIn = scene.handleAllIn;
+
+            scene.handleFold = function() {
+                log('🃏 Fold button clicked');
+                return originalFold.call(this);
+            };
+
+            scene.handleRaise = function() {
+                log('📈 Raise button clicked');
+                return originalRaise.call(this);
+            };
+
+            scene.handleAllIn = function() {
+                log('💎 All-in button clicked');
+                return originalAllIn.call(this);
+            };
+
+            log('✅ Test monitoring setup complete');
+            updateStatus('Test monitoring active - game should start automatically');
+        }
+
+        // Auto-start the AI Bot Scene after a delay
+        setTimeout(() => {
+            if (window.game && window.game.scene) {
+                log('🚀 Auto-starting AI Bot Scene...');
+                window.game.scene.start('AIBotScene');
+                updateStatus('AI Bot Scene started - waiting for game initialization');
+            }
+        }, 2000);
+    </script>
+</body>
+</html> 

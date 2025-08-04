@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Config Import Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Environment Config Import Test</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        import { EnvironmentConfig } from './client/src/config/EnvironmentConfig.js';
+        
+        const results = document.getElementById('results');
+        
+        function addResult(message, isSuccess = true) {
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        try {
+            // Test 1: Import the class
+            addResult('Testing import of EnvironmentConfig class...');
+            addResult('✅ EnvironmentConfig class imported successfully');
+
+            // Test 2: Create new instance
+            addResult('Testing constructor...');
+            const config = new EnvironmentConfig();
+            addResult('✅ EnvironmentConfig constructor works');
+
+            // Test 3: Check if window.gameConfig exists
+            addResult('Testing global config object...');
+            if (window.gameConfig) {
+                addResult('✅ window.gameConfig object created');
+                addResult(`Environment: ${window.gameConfig.getEnvironment()}`);
+                addResult(`Debug: ${window.gameConfig.debug}`);
+            } else {
+                addResult('❌ window.gameConfig object not found', false);
+            }
+
+            // Test 4: Check backward compatibility
+            addResult('Testing backward compatibility...');
+            if (window.isDebug !== undefined) {
+                addResult(`✅ window.isDebug = ${window.isDebug}`);
+            } else {
+                addResult('❌ window.isDebug not set', false);
+            }
+
+            // Test 5: Test feature flags
+            addResult('Testing feature flags...');
+            const features = ['debugLogging', 'playerSelection', 'mockData'];
+            features.forEach(feature => {
+                const enabled = window.gameConfig.isFeatureEnabled(feature);
+                addResult(`Feature ${feature}: ${enabled}`);
+            });
+
+        } catch (error) {
+            addResult(`❌ Error: ${error.message}`, false);
+            console.error('Full error:', error);
+        }
+    </script>
+</body>
+</html> 

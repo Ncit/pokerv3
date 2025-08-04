@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Real Environment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success { background: #28a745; }
+        .button.success:hover { background: #1e7e34; }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .telegram-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Telegram Real Environment Test</h1>
+        
+        <div class="telegram-info">
+            <h3>🔍 Environment Detection</h3>
+            <p>This page will help determine if you're actually running in a real Telegram environment.</p>
+        </div>
+
+        <h2>🌐 Current Environment</h2>
+        <div id="environment-status">
+            <div class="status warning">
+                <strong>Analyzing...</strong> Checking environment...
+            </div>
+        </div>
+
+        <h2>📱 Telegram WebApp Details</h2>
+        <div id="telegram-details" class="data-display">
+            Loading Telegram details...
+        </div>
+
+        <h2>🔧 Manual Tests</h2>
+        <div>
+            <button class="button" onclick="testTelegramObject()">Test Telegram Object</button>
+            <button class="button" onclick="testWebAppMethods()">Test WebApp Methods</button>
+            <button class="button success" onclick="startGameTest()">Start Game Test</button>
+        </div>
+
+        <h2>📊 Debug Information</h2>
+        <div id="debug-info" class="data-display">
+            Debug information will appear here...
+        </div>
+
+        <div class="telegram-info">
+            <h3>💡 Expected Results in Real Telegram</h3>
+            <ul>
+                <li><strong>window.Telegram:</strong> Should be defined</li>
+                <li><strong>window.Telegram.WebApp:</strong> Should be defined</li>
+                <li><strong>WebApp.initDataUnsafe:</strong> Should contain user data</li>
+                <li><strong>WebApp.platform:</strong> Should be "ios", "android", or "macos"</li>
+                <li><strong>WebApp.version:</strong> Should show Telegram version</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Real Environment Test
+        class TelegramRealEnvironmentTest {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.analyzeEnvironment();
+                this.displayTelegramDetails();
+                this.updateDebugInfo();
+            }
+
+            analyzeEnvironment() {
+                const statusDiv = document.getElementById('environment-status');
+                
+                // Check if we're in Telegram
+                const isInTelegram = typeof window.Telegram !== 'undefined';
+                const hasWebApp = isInTelegram && typeof window.Telegram.WebApp !== 'undefined';
+                
+                let status = 'error';
+                let message = '';
+                
+                if (isInTelegram && hasWebApp) {
+                    status = 'success';
+                    message = '✅ You are running in a REAL Telegram environment!';
+                } else if (isInTelegram) {
+                    status = 'warning';
+                    message = '⚠️ Telegram object exists but WebApp is missing';
+                } else {
+                    status = 'error';
+                    message = '❌ You are NOT in a Telegram environment';
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="status ${status}">
+                        <strong>🌐 Environment Status</strong><br>
+                        ${message}<br>
+                        Telegram Object: ${isInTelegram ? 'Available' : 'Not Available'}<br>
+                        WebApp Object: ${hasWebApp ? 'Available' : 'Not Available'}<br>
+                        URL: ${window.location.href}<br>
+                        User Agent: ${navigator.userAgent.substring(0, 100)}...
+                    </div>
+                `;
+            }
+
+            displayTelegramDetails() {
+                const detailsDiv = document.getElementById('telegram-details');
+                
+                if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
+                    const webApp = window.Telegram.WebApp;
+                    const details = {
+                        platform: webApp.platform,
+                        version: webApp.version,
+                        initData: webApp.initData,
+                        initDataUnsafe: webApp.initDataUnsafe,
+                        themeParams: webApp.themeParams,
+                        colorScheme: webApp.colorScheme,
+                        isExpanded: webApp.isExpanded,
+                        viewportHeight: webApp.viewportHeight,
+                        viewportStableHeight: webApp.viewportStableHeight,
+                        headerColor: webApp.headerColor,
+                        backgroundColor: webApp.backgroundColor,
+                        isClosingConfirmationEnabled: webApp.isClosingConfirmationEnabled,
+                        BackButton: typeof webApp.BackButton,
+                        MainButton: typeof webApp.MainButton,
+                        HapticFeedback: typeof webApp.HapticFeedback,
+                        ready: typeof webApp.ready,
+                        expand: typeof webApp.expand,
+                        close: typeof webApp.close
+                    };
+                    
+                    detailsDiv.textContent = JSON.stringify(details, null, 2);
+                } else {
+                    detailsDiv.textContent = 'Telegram WebApp not available';
+                }
+            }
+
+            updateDebugInfo() {
+                const debugDiv = document.getElementById('debug-info');
+                
+                const debug = {
+                    timestamp: new Date().toISOString(),
+                    url: window.location.href,
+                    searchParams: window.location.search,
+                    hash: window.location.hash,
+                    userAgent: navigator.userAgent,
+                    windowWidth: window.innerWidth,
+                    windowHeight: window.innerHeight,
+                    screenWidth: screen.width,
+                    screenHeight: screen.height,
+                    devicePixelRatio: window.devicePixelRatio,
+                    orientation: screen.orientation ? screen.orientation.type : 'unknown',
+                    telegramObject: typeof window.Telegram,
+                    telegramWebApp: typeof window.Telegram?.WebApp,
+                    gameConfig: window.gameConfig ? 'Available' : 'Not Available',
+                    appData: window.appData ? 'Available' : 'Not Available'
+                };
+                
+                debugDiv.textContent = JSON.stringify(debug, null, 2);
+            }
+        }
+
+        // Test functions
+        function testTelegramObject() {
+            console.log('🧪 Testing Telegram Object...');
+            
+            if (typeof window.Telegram !== 'undefined') {
+                console.log('✅ window.Telegram is available');
+                console.log('📱 window.Telegram:', window.Telegram);
+                
+                if (window.Telegram.WebApp) {
+                    console.log('✅ window.Telegram.WebApp is available');
+                    console.log('📱 WebApp:', window.Telegram.WebApp);
+                } else {
+                    console.log('❌ window.Telegram.WebApp is not available');
+                }
+            } else {
+                console.log('❌ window.Telegram is not available');
+            }
+        }
+
+        function testWebAppMethods() {
+            console.log('🧪 Testing WebApp Methods...');
+            
+            if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
+                const webApp = window.Telegram.WebApp;
+                
+                // Test available methods
+                const methods = ['ready', 'expand', 'close', 'MainButton', 'BackButton', 'HapticFeedback'];
+                
+                methods.forEach(method => {
+                    if (typeof webApp[method] !== 'undefined') {
+                        console.log(`✅ ${method}: Available (${typeof webApp[method]})`);
+                    } else {
+                        console.log(`❌ ${method}: Not available`);
+                    }
+                });
+                
+                // Test user data
+                if (webApp.initDataUnsafe && webApp.initDataUnsafe.user) {
+                    console.log('✅ User data available:', webApp.initDataUnsafe.user);
+                } else {
+                    console.log('❌ User data not available');
+                }
+            } else {
+                console.log('❌ WebApp not available for testing');
+            }
+        }
+
+        function startGameTest() {
+            console.log('🎮 Starting Game Test...');
+            
+            // Test the same logic as the game
+            if (typeof window.Telegram === 'undefined' || !window.Telegram.WebApp) {
+                console.log('📱 Telegram environment detected but Web App not available (testing mode)');
+                console.log('📱 This is normal when testing outside of Telegram');
+                
+                // Create mock data like the game does
+                const mockTelegramData = {
+                    telegram_user_id: 123456789,
+                    first_name: 'Telegram User',
+                    last_name: '',
+                    username: 'telegram_user',
+                    language_code: 'en',
+                    userAvatar: 'assets/avatar.png',
+                    is_premium: false,
+                    added_to_attachment_menu: false,
+                    allows_write_to_pm: false
+                };
+                
+                console.log('📱 Mock Telegram app data set for testing:', mockTelegramData);
+            } else {
+                console.log('✅ Real Telegram environment detected!');
+                console.log('📱 WebApp:', window.Telegram.WebApp);
+            }
+        }
+
+        // Initialize test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TelegramRealEnvironmentTest();
+        });
+    </script>
+</body>
+</html> 

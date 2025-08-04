@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Player Reconnection - Multiplayer Poker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #4CAF50;
+        }
+        .status.error {
+            background-color: #f44336;
+        }
+        .status.info {
+            background-color: #2196F3;
+        }
+        .status.warning {
+            background-color: #FFA500;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        .instructions {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 5px 0;
+        }
+        .step-number {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+        .warning {
+            background-color: #FFA500;
+            color: #000;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Test Player Reconnection</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This test requires multiple browser tabs/windows to simulate different players.
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Test Instructions:</h3>
+            <div class="step">
+                <span class="step-number">1</span>
+                Start the server: <code>cd pokerv2/server && npm run dev</code>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                Open this test page in multiple browser tabs/windows (at least 3)
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                Join the game with different players (use different names)
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                Click "Ready" for all players and start the game
+            </div>
+            <div class="step">
+                <span class="step-number">5</span>
+                Wait for cards to be dealt and the game to start
+            </div>
+            <div class="step">
+                <span class="step-number">6</span>
+                When it's a player's turn, close their browser tab to simulate disconnection
+            </div>
+            <div class="step">
+                <span class="step-number">7</span>
+                Wait for the game to continue with remaining players
+            </div>
+            <div class="step">
+                <span class="step-number">8</span>
+                Reopen the closed tab and rejoin the game with the same player name
+            </div>
+            <div class="step">
+                <span class="step-number">9</span>
+                Verify that the reconnected player can make turns normally
+            </div>
+            <div class="step">
+                <span class="step-number">10</span>
+                Verify that the reconnected player's cards are restored
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 Game Interface</h3>
+            <div id="gameContainer">
+                <iframe src="index.html" class="game-frame" id="gameFrame"></iframe>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Test Controls</h3>
+            <button class="test-button" onclick="refreshGame()">🔄 Refresh Game</button>
+            <button class="test-button" onclick="openNewTab()">🆕 Open New Player Tab</button>
+            <button class="test-button" onclick="testReconnection()">🔄 Test Reconnection</button>
+            <button class="test-button" onclick="checkTurnSystem()">✅ Check Turn System</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Status</h3>
+            <div id="testStatus">
+                <div class="status info">Ready to test reconnection functionality</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Expected Behavior</h3>
+            <ul>
+                <li><strong>Disconnection Handling:</strong> When a player disconnects, they should be marked as folded but not completely removed</li>
+                <li><strong>Game Continuation:</strong> The game should continue with remaining players</li>
+                <li><strong>Reconnection:</strong> When a player reconnects with the same name, they should be restored to the game</li>
+                <li><strong>Turn System:</strong> Reconnected players should be able to make turns normally</li>
+                <li><strong>Card Restoration:</strong> Reconnected players should have their cards restored</li>
+                <li><strong>Game State:</strong> The game should maintain its state during disconnection/reconnection</li>
+                <li><strong>Notifications:</strong> Should show appropriate messages for disconnection and reconnection</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Technical Details</h3>
+            <ul>
+                <li><strong>Player Tracking:</strong> Players are tracked by name for reconnection</li>
+                <li><strong>Socket Management:</strong> Socket IDs are updated on reconnection</li>
+                <li><strong>Game State:</strong> Game continues with active players only</li>
+                <li><strong>Card Management:</strong> Cards are hidden during disconnection, restored on reconnection</li>
+                <li><strong>Turn Logic:</strong> Disconnected players are marked as folded, reconnected players can act normally</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🐛 Troubleshooting</h3>
+            <ul>
+                <li><strong>Reconnection fails:</strong> Ensure using the same player name</li>
+                <li><strong>Turn issues:</strong> Check browser console for error messages</li>
+                <li><strong>Cards not restored:</strong> Verify game is still in progress</li>
+                <li><strong>Server connection:</strong> Ensure server is running on port 3000</li>
+                <li><strong>Multiple players needed:</strong> Test requires at least 2-3 players</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function refreshGame() {
+            const frame = document.getElementById('gameFrame');
+            frame.src = frame.src;
+            updateStatus('Game refreshed', 'info');
+        }
+
+        function openNewTab() {
+            window.open('index.html', '_blank');
+            updateStatus('New player tab opened', 'info');
+        }
+
+        function testReconnection() {
+            updateStatus('Reconnection test initiated - disconnect and reconnect a player', 'warning');
+        }
+
+        function checkTurnSystem() {
+            updateStatus('Turn system check - verify reconnected players can make turns', 'info');
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('testStatus');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            statusDiv.appendChild(statusElement);
+            
+            // Keep only last 5 status messages
+            const statusMessages = statusDiv.querySelectorAll('.status');
+            if (statusMessages.length > 5) {
+                statusMessages[0].remove();
+            }
+        }
+
+        // Listen for messages from the game iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'reconnection') {
+                updateStatus(`Reconnection event: ${event.data.message}`, 'success');
+            }
+        });
+
+        // Auto-refresh status every 30 seconds
+        setInterval(() => {
+            updateStatus('Test session active - monitoring reconnection functionality', 'info');
+        }, 30000);
+    </script>
+</body>
+</html> 

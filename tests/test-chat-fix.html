@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Fix Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .test-info {
+            background: #2d3748;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            background: #4a5568;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 8px;
+        }
+        #game-container {
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: block;
+        }
+        .status {
+            background: #2d3748;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>🧪 Chat Fix Test</h2>
+        <p>Testing the fixed ChatManager with proper sendButtonBg handling</p>
+    </div>
+
+    <div class="test-steps">
+        <h3>Test Steps:</h3>
+        <ol>
+            <li>Open browser console to see debug output</li>
+            <li>Click the chat button (bottom-right) to open chat</li>
+            <li>Hover over the "Send" button to test color change</li>
+            <li>Type a message and press Enter or click Send</li>
+            <li>Check console for any errors or warnings</li>
+            <li>Verify sendButtonBg methods are available</li>
+        </ol>
+    </div>
+
+    <canvas id="game-container" width="1200" height="800"></canvas>
+    
+    <div class="status" id="status">
+        Status: Loading...
+    </div>
+
+    <script src="dependencies/phaser.js"></script>
+    <script type="module">
+        import { ChatManager } from './client/src/managers/ChatManager.js';
+        import { NetworkManager } from './client/src/managers/NetworkManager.js';
+
+        // Mock scene for testing
+        class TestScene {
+            constructor() {
+                this.add = {
+                    container: (x, y) => {
+                        const container = {
+                            x, y,
+                            add: (child) => {
+                                if (!container.children) container.children = [];
+                                container.children.push(child);
+                                return container;
+                            },
+                            setVisible: (visible) => {
+                                container.visible = visible;
+                                return container;
+                            },
+                            removeAll: () => container
+                        };
+                        return container;
+                    },
+                    rectangle: (x, y, width, height, fillColor, alpha) => {
+                        const rect = {
+                            x, y, width, height, fillColor, alpha,
+                            setStrokeStyle: (width, color, alpha) => rect,
+                            setFill: (color) => {
+                                rect.fillColor = color;
+                                return rect;
+                            },
+                            fillColor: fillColor,
+                            fill: fillColor,
+                            setOrigin: (x, y) => rect,
+                            setInteractive: () => rect,
+                            on: (event, callback) => rect,
+                            setText: (text) => rect,
+                            text: '',
+                            setVisible: (visible) => rect
+                        };
+                        return rect;
+                    },
+                    text: (x, y, text, style) => {
+                        const textObj = {
+                            x, y, text: text || '',
+                            style,
+                            setOrigin: (x, y) => textObj,
+                            setInteractive: () => textObj,
+                            on: (event, callback) => {
+                                if (event === 'pointerover' || event === 'pointerout') {
+                                    textObj[event] = callback;
+                                }
+                                return textObj;
+                            },
+                            setText: (text) => {
+                                textObj.text = text;
+                                return textObj;
+                            },
+                            setVisible: (visible) => textObj
+                        };
+                        return textObj;
+                    }
+                };
+                
+                this.input = {
+                    keyboard: {
+                        on: (event, callback) => {
+                            if (event === 'keydown-ENTER') {
+                                document.addEventListener('keydown', (e) => {
+                                    if (e.key === 'Enter') callback();
+                                });
+                            } else if (event === 'keydown-ESC') {
+                                document.addEventListener('keydown', (e) => {
+                                    if (e.key === 'Escape') callback();
+                                });
+                            } else if (event === 'keydown') {
+                                document.addEventListener('keydown', callback);
+                            }
+                        }
+                    }
+                };
+            }
+        }
+
+        // Mock network manager
+        class MockNetworkManager {
+            constructor() {
+                this.isMultiplayer = true;
+            }
+            
+            sendChatMessage(message) {
+                console.log('MockNetworkManager: Sending chat message:', message);
+                // Simulate receiving the message back
+                setTimeout(() => {
+                    if (window.chatManager) {
+                        window.chatManager.addMessage('TestPlayer', message);
+                    }
+                }, 100);
+            }
+            
+            on(event, callback) {
+                // Mock event listener
+            }
+        }
+
+        // Initialize test
+        const scene = new TestScene();
+        const networkManager = new MockNetworkManager();
+        
+        // Create chat manager
+        window.chatManager = new ChatManager(scene, networkManager);
+        
+        // Add chat button to scene
+        scene.chatButton = scene.add.text(1100, 600, '💬', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fill: '#4a90e2'
+        });
+        scene.chatButton.setInteractive();
+        scene.chatButton.on('pointerdown', () => {
+            window.chatManager.toggleChat();
+        });
+        
+        // Update status
+        document.getElementById('status').textContent = 'Status: Chat system loaded. Click 💬 to open chat.';
+        
+        // Add some test messages
+        setTimeout(() => {
+            window.chatManager.addMessage('System', 'Chat system initialized successfully!');
+            window.chatManager.addMessage('TestPlayer', 'Hello, this is a test message!');
+        }, 500);
+        
+        console.log('Chat Fix Test: System initialized');
+    </script>
+</body>
+</html> 

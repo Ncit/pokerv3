@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turn Detection Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f44336;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .debug-info {
+            background-color: #2d1b69;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .debug-info h4 {
+            color: #9c27b0;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔍 Turn Detection Debug Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test helps debug the "not your turn" error when it actually is your turn. The issue was in the NetworkManager's `isMyTurn()` method using inconsistent data sources.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🐛 Root Cause Analysis</h2>
+            <div class="test-description">
+                The issue was that the `isMyTurn()` method was checking `this.gameState.players` but the `gameStateUpdate` handler was setting `this.players = data.gameState.players`, creating a data inconsistency.
+            </div>
+            
+            <div class="debug-info">
+                <h4>Problem Identified:</h4>
+                <div class="code-block">
+// OLD CODE (BROKEN):
+isMyTurn() {
+    if (!this.gameState || !this.playerId) return false;
+    
+    // ❌ WRONG: Checking gameState.players instead of this.players
+    const currentPlayer = this.gameState.players.find(p => p.isCurrentPlayer);
+    return currentPlayer && currentPlayer.id === this.playerId;
+}
+
+// NEW CODE (FIXED):
+isMyTurn() {
+    if (!this.gameState || !this.playerId) return false;
+    
+    // ✅ CORRECT: Using this.players which is updated from gameStateUpdate
+    const currentPlayer = this.players.find(p => p.isCurrentPlayer);
+    
+    // Added debug logging
+    console.log('NetworkManager: isMyTurn check:', {
+        playerId: this.playerId,
+        currentPlayer: currentPlayer ? currentPlayer.id : null,
+        isMyTurn: currentPlayer && currentPlayer.id === this.playerId,
+        totalPlayers: this.players.length,
+        players: this.players.map(p => ({ id: p.id, name: p.name, isCurrentPlayer: p.isCurrentPlayer }))
+    });
+    
+    return currentPlayer && currentPlayer.id === this.playerId;
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario: Turn Detection Fix</h2>
+            <div class="test-description">
+                Test that the turn detection is now working correctly after the fix.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in two browser windows</li>
+                    <li>Join as different players (Player1, Player2)</li>
+                    <li>Start the game</li>
+                    <li>When it's Player1's turn, check the console for debug logs</li>
+                    <li>Verify that buttons are enabled when it's your turn</li>
+                    <li>Try clicking buttons to ensure they work</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Console should show detailed <span class="highlight">isMyTurn check logs</span></li>
+                    <li>When it's your turn: <code>isMyTurn: true</code></li>
+                    <li>When it's not your turn: <code>isMyTurn: false</code></li>
+                    <li>All buttons should be enabled when it's your turn</li>
+                    <li>No more "not your turn" errors when it actually is your turn</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Additional Fixes Applied</h2>
+            <div class="test-description">
+                Fixed consistency issues in other methods that were also using the wrong data source.
+            </div>
+            
+            <div class="expected-result">
+                <h4>Methods Fixed:</h4>
+                <div class="code-block">
+// Fixed getCurrentPlayer() method
+getCurrentPlayer() {
+    if (!this.players) return null;  // ✅ Now uses this.players
+    return this.players.find(p => p.isCurrentPlayer);
+}
+
+// Fixed getActivePlayers() method  
+getActivePlayers() {
+    if (!this.players) return [];  // ✅ Now uses this.players
+    return this.players.filter(p => !p.folded);
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📊 Debug Console Output</h2>
+            <div class="test-description">
+                The enhanced logging will show detailed information about turn detection:
+            </div>
+            
+            <div class="debug-info">
+                <h4>Expected Console Logs:</h4>
+                <div class="code-block">
+NetworkManager: isMyTurn check: {
+    playerId: "player1_id",
+    currentPlayer: "player1_id", 
+    isMyTurn: true,
+    totalPlayers: 2,
+    players: [
+        { id: "player1_id", name: "Player1", isCurrentPlayer: true },
+        { id: "player2_id", name: "Player2", isCurrentPlayer: false }
+    ]
+}
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Troubleshooting Guide</h2>
+            <div class="test-description">
+                If you're still experiencing turn detection issues:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li><strong>Check Console Logs:</strong> Look for the detailed <code>isMyTurn check</code> logs</li>
+                    <li><strong>Verify playerId:</strong> Ensure <code>playerId</code> is set correctly</li>
+                    <li><strong>Check Players Array:</strong> Verify <code>this.players</code> contains the expected data</li>
+                    <li><strong>Verify isCurrentPlayer:</strong> Ensure one player has <code>isCurrentPlayer: true</code></li>
+                    <li><strong>Check Network Connection:</strong> Ensure gameStateUpdate events are being received</li>
+                    <li><strong>Verify Server State:</strong> Check if server is sending correct turn information</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Common Issues</h2>
+            <div class="warning">
+                <strong>Potential Issues to Check:</strong>
+                <ul>
+                    <li><strong>Data Synchronization:</strong> Ensure gameStateUpdate events are updating this.players correctly</li>
+                    <li><strong>Player ID Mismatch:</strong> Verify the playerId assigned matches the player in the game</li>
+                    <li><strong>Server Turn Logic:</strong> Check if server is correctly setting isCurrentPlayer flag</li>
+                    <li><strong>Reconnection Issues:</strong> Ensure playerId is preserved during reconnections</li>
+                    <li><strong>Game State Timing:</strong> Verify turn detection happens after game state is fully loaded</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">✅ Verification Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify the turn detection fix:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ Console shows detailed isMyTurn check logs</li>
+                    <li>✅ playerId is correctly set and matches a player in the game</li>
+                    <li>✅ this.players array contains all players with correct data</li>
+                    <li>✅ One player has isCurrentPlayer: true when it's their turn</li>
+                    <li>✅ isMyTurn() returns true when it should be your turn</li>
+                    <li>✅ All buttons are enabled when it's your turn</li>
+                    <li>✅ No "not your turn" errors when buttons are clicked</li>
+                    <li>✅ Turn detection works correctly for all players</li>
+                    <li>✅ Turn detection works after reconnections</li>
+                    <li>✅ Turn detection works after room resets</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Next Steps</h2>
+            <div class="test-description">
+                After verifying the turn detection fix:
+            </div>
+            
+            <div class="success">
+                <strong>If Turn Detection Works:</strong>
+                <ul>
+                    <li>Test button activation in different game scenarios</li>
+                    <li>Verify button behavior with raise limits</li>
+                    <li>Test turn detection during reconnections</li>
+                    <li>Verify spectator functionality</li>
+                </ul>
+            </div>
+            
+            <div class="error">
+                <strong>If Issues Persist:</strong>
+                <ul>
+                    <li>Check server-side turn management logic</li>
+                    <li>Verify gameStateUpdate event data structure</li>
+                    <li>Check for race conditions in data updates</li>
+                    <li>Review player ID assignment logic</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

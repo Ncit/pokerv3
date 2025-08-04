@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Configuration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .environment-info {
+            background-color: #e2e3e5;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Environment Configuration Test</h1>
+    
+    <div class="test-section">
+        <h2>Environment Detection Test</h2>
+        <div id="environment-info" class="environment-info">
+            <strong>Current Environment:</strong> <span id="current-env">Detecting...</span><br>
+            <strong>Debug Mode:</strong> <span id="debug-mode">Detecting...</span><br>
+            <strong>Features:</strong> <span id="features">Detecting...</span>
+        </div>
+        
+        <button onclick="testEnvironmentDetection()">Test Environment Detection</button>
+        <button onclick="testFeatureFlags()">Test Feature Flags</button>
+        <button onclick="testEnvironmentOverride()">Test Environment Override</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Environment Switching</h2>
+        <button onclick="setEnvironment('development')">Set Development</button>
+        <button onclick="setEnvironment('staging')">Set Staging</button>
+        <button onclick="setEnvironment('production')">Set Production</button>
+        <button onclick="setEnvironment('test')">Set Test</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script type="module">
+        // Import the environment configuration
+        import { EnvironmentConfig, isFeatureEnabled, getEnvironment, isDevelopment, isProduction } from './client/src/config/EnvironmentConfig.js';
+
+        // Make functions globally available for button clicks
+        window.testEnvironmentDetection = function() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                // Test basic environment detection
+                const env = getEnvironment();
+                const isDev = isDevelopment();
+                const isProd = isProduction();
+                
+                results.innerHTML += `
+                    <div class="test-result success">
+                        ✅ Environment Detection: ${env}<br>
+                        ✅ Is Development: ${isDev}<br>
+                        ✅ Is Production: ${isProd}
+                    </div>
+                `;
+                
+                // Test window.gameConfig object
+                if (window.gameConfig) {
+                    results.innerHTML += `
+                        <div class="test-result success">
+                            ✅ window.gameConfig object exists<br>
+                            ✅ Environment: ${window.gameConfig.getEnvironment()}<br>
+                            ✅ Debug: ${window.gameConfig.debug}
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="test-result error">
+                            ❌ window.gameConfig object not found
+                        </div>
+                    `;
+                }
+                
+                // Test backward compatibility
+                if (window.isDebug !== undefined) {
+                    results.innerHTML += `
+                        <div class="test-result success">
+                            ✅ Backward compatibility: window.isDebug = ${window.isDebug}
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="test-result error">
+                            ❌ Backward compatibility failed: window.isDebug not set
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="test-result error">
+                        ❌ Error testing environment detection: ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.testFeatureFlags = function() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                const features = [
+                    'playerSelection',
+                    'debugLogging', 
+                    'mockData',
+                    'ngrokHeaders',
+                    'verboseErrors'
+                ];
+                
+                results.innerHTML += '<div class="test-result info"><strong>Feature Flags Test:</strong></div>';
+                
+                features.forEach(feature => {
+                    const enabled = isFeatureEnabled(feature);
+                    const status = enabled ? '✅' : '❌';
+                    results.innerHTML += `
+                        <div class="test-result ${enabled ? 'success' : 'error'}">
+                            ${status} ${feature}: ${enabled}
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="test-result error">
+                        ❌ Error testing feature flags: ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.testEnvironmentOverride = function() {
+            const results = document.getElementById('test-results');
+            
+            try {
+                // Test environment override
+                const originalEnv = getEnvironment();
+                
+                // Override to production
+                window.gameConfig.setEnvironment('production');
+                const newEnv = getEnvironment();
+                
+                // Restore original
+                window.gameConfig.setEnvironment(originalEnv);
+                
+                results.innerHTML += `
+                    <div class="test-result success">
+                        ✅ Environment Override Test:<br>
+                        Original: ${originalEnv}<br>
+                        Overridden: ${newEnv}<br>
+                        Restored: ${getEnvironment()}
+                    </div>
+                `;
+                
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="test-result error">
+                        ❌ Error testing environment override: ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.setEnvironment = function(env) {
+            try {
+                window.gameConfig.setEnvironment(env);
+                updateEnvironmentInfo();
+                
+                const results = document.getElementById('test-results');
+                results.innerHTML += `
+                    <div class="test-result success">
+                        ✅ Environment changed to: ${env}
+                    </div>
+                `;
+            } catch (error) {
+                const results = document.getElementById('test-results');
+                results.innerHTML += `
+                    <div class="test-result error">
+                        ❌ Error setting environment: ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        function updateEnvironmentInfo() {
+            if (window.gameConfig) {
+                document.getElementById('current-env').textContent = window.gameConfig.getEnvironment();
+                document.getElementById('debug-mode').textContent = window.gameConfig.debug;
+                document.getElementById('features').textContent = JSON.stringify(window.gameConfig.features, null, 2);
+            }
+        }
+
+        // Initialize environment configuration
+        const envConfig = new EnvironmentConfig();
+        
+        // Update display after initialization
+        setTimeout(updateEnvironmentInfo, 100);
+        
+        // Auto-run basic tests
+        setTimeout(() => {
+            window.testEnvironmentDetection();
+            window.testFeatureFlags();
+        }, 200);
+    </script>
+</body>
+</html> 

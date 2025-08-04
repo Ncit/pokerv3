@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Environment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .info-panel {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .data-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.success { background: #28a745; }
+        .button.success:hover { background: #1e7e34; }
+        .button.warning { background: #ffc107; color: #000; }
+        .button.warning:hover { background: #e0a800; }
+        .button.info { background: #17a2b8; }
+        .button.info:hover { background: #138496; }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .game-container {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            margin: 20px 0;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Telegram Environment Test</h1>
+        
+        <div class="info-panel">
+            <h3>Test Overview</h3>
+            <p>This page tests the Telegram environment detection and mock data functionality.</p>
+            <p>The warnings you see are expected when testing outside of Telegram.</p>
+        </div>
+
+        <h2>🔍 Environment Detection</h2>
+        <div id="environment-status">
+            <div class="status warning">
+                <strong>Loading...</strong> Checking environment...
+            </div>
+        </div>
+
+        <h2>📊 Game Configuration</h2>
+        <div id="game-config-display" class="data-display">
+            Loading game configuration...
+        </div>
+
+        <h2>📱 Telegram Integration</h2>
+        <div id="telegram-status">
+            <div class="status warning">
+                <strong>Loading...</strong> Checking Telegram integration...
+            </div>
+        </div>
+
+        <h2>🧪 Test Controls</h2>
+        <div>
+            <button class="button" onclick="testEnvironmentDetection()">Test Environment Detection</button>
+            <button class="button" onclick="testTelegramMock()">Test Telegram Mock Data</button>
+            <button class="button" onclick="testVKMock()">Test VK Mock Data</button>
+            <button class="button success" onclick="startGameWithTelegram()">Start Game (Telegram Mode)</button>
+            <button class="button info" onclick="startGameWithVK()">Start Game (VK Mode)</button>
+            <button class="button warning" onclick="startGameDebug()">Start Game (Debug Mode)</button>
+        </div>
+
+        <h2>🎮 Game Container</h2>
+        <div id="game-container" class="game-container">
+            <!-- The Phaser game will be loaded here -->
+        </div>
+
+        <div class="info-panel">
+            <h3>Expected Behavior</h3>
+            <ul>
+                <li><strong>Environment Detection:</strong> Should detect URL parameters and set environment</li>
+                <li><strong>Telegram Mock:</strong> Should create mock data when Telegram WebApp not available</li>
+                <li><strong>Game Start:</strong> Should work without errors in all modes</li>
+                <li><strong>Console Logs:</strong> Should show detailed environment information</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Environment Test
+        class TelegramEnvironmentTest {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.checkEnvironmentDetection();
+                this.displayGameConfig();
+                this.testTelegramIntegration();
+            }
+
+            checkEnvironmentDetection() {
+                const statusDiv = document.getElementById('environment-status');
+                
+                // Check URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const envParam = urlParams.get('env');
+                const hash = window.location.hash.toLowerCase();
+                
+                // Check platform availability
+                const telegramAvailable = typeof window.Telegram !== 'undefined' && window.Telegram.WebApp;
+                const vkAvailable = typeof window.vkBridge !== 'undefined';
+                
+                let environment = 'unknown';
+                let status = 'warning';
+                let message = '';
+                
+                if (envParam === 'productionTelegram' || hash.includes('#telegram')) {
+                    environment = 'telegram (URL parameter)';
+                    if (telegramAvailable) {
+                        status = 'success';
+                        message = '✅ Telegram environment detected and WebApp available';
+                    } else {
+                        status = 'info';
+                        message = '📱 Telegram environment detected (testing mode - WebApp not available)';
+                    }
+                } else if (envParam === 'productionVK' || hash.includes('#vk')) {
+                    environment = 'vk (URL parameter)';
+                    if (vkAvailable) {
+                        status = 'success';
+                        message = '✅ VK environment detected and Bridge available';
+                    } else {
+                        status = 'info';
+                        message = '📱 VK environment detected (testing mode - Bridge not available)';
+                    }
+                } else if (telegramAvailable) {
+                    environment = 'telegram (auto-detected)';
+                    status = 'success';
+                    message = '✅ Telegram WebApp auto-detected';
+                } else if (vkAvailable) {
+                    environment = 'vk (auto-detected)';
+                    status = 'success';
+                    message = '✅ VK Bridge auto-detected';
+                } else {
+                    environment = 'debug (no platform detected)';
+                    status = 'warning';
+                    message = '⚠️ No platform detected - using debug mode';
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="status ${status}">
+                        <strong>🌐 Environment: ${environment}</strong><br>
+                        ${message}<br>
+                        URL Parameter: ${envParam || 'none'}<br>
+                        Hash Fragment: ${hash || 'none'}<br>
+                        Telegram WebApp: ${telegramAvailable ? 'Available' : 'Not Available'}<br>
+                        VK Bridge: ${vkAvailable ? 'Available' : 'Not Available'}
+                    </div>
+                `;
+            }
+
+            displayGameConfig() {
+                const configDiv = document.getElementById('game-config-display');
+                
+                if (window.gameConfig) {
+                    const config = {
+                        environment: window.gameConfig.getEnvironment(),
+                        debug: window.gameConfig.debug,
+                        features: window.gameConfig.features,
+                        isDevelopment: window.gameConfig.isDevelopment(),
+                        isProductionVK: window.gameConfig.isProductionVK(),
+                        isProductionTelegram: window.gameConfig.isProductionTelegram()
+                    };
+                    configDiv.textContent = JSON.stringify(config, null, 2);
+                } else {
+                    configDiv.textContent = 'Game configuration not available';
+                }
+            }
+
+            testTelegramIntegration() {
+                const telegramDiv = document.getElementById('telegram-status');
+                
+                // Test Telegram logic import
+                import('./src/scripts/telegramlogic.js').then(({ initTelegramWebApp, setupTelegramApp }) => {
+                    const initResult = initTelegramWebApp();
+                    
+                    if (initResult) {
+                        telegramDiv.innerHTML = `
+                            <div class="status success">
+                                <strong>✅ Telegram Integration Working</strong><br>
+                                initTelegramWebApp() returned: true<br>
+                                WebApp initialized successfully
+                            </div>
+                        `;
+                    } else {
+                        telegramDiv.innerHTML = `
+                            <div class="status info">
+                                <strong>📱 Telegram Integration (Testing Mode)</strong><br>
+                                initTelegramWebApp() returned: false<br>
+                                This is normal when testing outside Telegram<br>
+                                Mock data will be used for testing
+                            </div>
+                        `;
+                    }
+                }).catch((error) => {
+                    telegramDiv.innerHTML = `
+                        <div class="status error">
+                            <strong>❌ Telegram Integration Error</strong><br>
+                            Error: ${error.message}<br>
+                            This indicates a problem with the telegramlogic.js file
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Test functions
+        function testEnvironmentDetection() {
+            console.log('🧪 Testing Environment Detection...');
+            new TelegramEnvironmentTest();
+        }
+
+        function testTelegramMock() {
+            console.log('🧪 Testing Telegram Mock Data...');
+            
+            // Simulate Telegram environment
+            window.location.href = window.location.pathname + '?env=productionTelegram';
+        }
+
+        function testVKMock() {
+            console.log('🧪 Testing VK Mock Data...');
+            
+            // Simulate VK environment
+            window.location.href = window.location.pathname + '?env=productionVK';
+        }
+
+        function startGameWithTelegram() {
+            console.log('🚀 Starting game in Telegram mode...');
+            window.location.href = 'index.html?env=productionTelegram';
+        }
+
+        function startGameWithVK() {
+            console.log('🚀 Starting game in VK mode...');
+            window.location.href = 'index.html?env=productionVK';
+        }
+
+        function startGameDebug() {
+            console.log('🚀 Starting game in debug mode...');
+            window.location.href = 'index.html';
+        }
+
+        // Initialize test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TelegramEnvironmentTest();
+        });
+    </script>
+</body>
+</html> 

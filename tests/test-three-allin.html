@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Players All-In Test - Poker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border-radius: 10px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .feature-list {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .feature-list h3 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .code-example {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border-left: 3px solid #e74c3c;
+        }
+        .scenario {
+            background: #2d5a2d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+        .scenario h4 {
+            color: #2ecc71;
+            margin-top: 0;
+        }
+        .button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #2980b9;
+        }
+        .warning {
+            background: #8b4513;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffa500;
+        }
+        .warning h4 {
+            color: #ffa500;
+            margin-top: 0;
+        }
+        .allin-test {
+            background: #4a2d5a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #9b59b6;
+        }
+        .allin-test h4 {
+            color: #9b59b6;
+            margin-top: 0;
+        }
+        .step-by-step {
+            background: #2d4a5a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        .step-by-step h4 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        .step-by-step ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .step-by-step li {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Three Players All-In Test</h1>
+            <p>Testing the auto all-in feature and all-in functionality with three players</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🎰 Test Objective</h2>
+            <p>This test verifies that the auto all-in feature works correctly when multiple players have insufficient funds for minimum raises, and that the all-in functionality handles multiple all-in players properly.</p>
+            
+            <div class="feature-list">
+                <h3>What we're testing:</h3>
+                <ul>
+                    <li><strong>Auto All-In Conversion:</strong> When players can't afford minimum raises</li>
+                    <li><strong>Multiple All-In Players:</strong> Three players going all-in in sequence</li>
+                    <li><strong>Pot Calculation:</strong> Correct pot distribution with multiple all-in amounts</li>
+                    <li><strong>Game Flow:</strong> Proper betting round completion with all-in players</li>
+                    <li><strong>Showdown Logic:</strong> Hand evaluation with multiple all-in players</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Test Scenario Setup</h2>
+            
+            <div class="allin-test">
+                <h4>Initial Player Setup:</h4>
+                <ul>
+                    <li><strong>Player 1 (Никита):</strong> $100 bank, will try to raise but can't afford minimum</li>
+                    <li><strong>Player 2 (Анна):</strong> $50 bank, will try to raise but can't afford minimum</li>
+                    <li><strong>Player 3 (Михаил):</strong> $25 bank, will try to raise but can't afford minimum</li>
+                </ul>
+            </div>
+
+            <div class="allin-test">
+                <h4>Expected Sequence:</h4>
+                <ol>
+                    <li>Player 1 clicks "Raise" → Auto converts to all-in ($100)</li>
+                    <li>Player 2 clicks "Raise" → Auto converts to all-in ($50)</li>
+                    <li>Player 3 clicks "Raise" → Auto converts to all-in ($25)</li>
+                    <li>Game proceeds to showdown with all three players all-in</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Technical Implementation</h2>
+            
+            <div class="code-example">
+                <h4>Auto All-In Logic (FastGameScene.js):</h4>
+                <pre>
+handleRaise() {
+    // Calculate minimum raise amount
+    let totalBetAmount;
+    if (this.gameState.currentBet === 0) {
+        totalBetAmount = this.gameState.bigBlind; // $20
+    } else {
+        totalBetAmount = this.gameState.currentBet + 10;
+    }
+    
+    // Check if player has enough money for minimum raise
+    if (myPlayer.bank < totalBetAmount - myPlayer.currentBet) {
+        // Auto convert to all-in
+        console.log('FastGameScene: Insufficient funds, making all-in');
+        this.networkManager.sendPokerAction('allIn', myPlayer.bank);
+    } else {
+        // Normal raise
+        this.networkManager.sendPokerAction('raise', totalBetAmount);
+    }
+}
+                </pre>
+            </div>
+
+            <div class="code-example">
+                <h4>Server All-In Handling (PokerGame.js):</h4>
+                <pre>
+allInPlayer(playerId) {
+    const player = this.players.get(playerId);
+    const allInAmount = player.bank;
+    
+    // Update player's bet and bank
+    player.currentBet += allInAmount;
+    player.bank -= allInAmount;
+    this.pot += allInAmount;
+    
+    // If all-in amount is greater than current bet, update current bet
+    if (player.currentBet > this.currentBet) {
+        this.currentBet = player.currentBet;
+        // Reset action tracking for other players
+        for (const p of this.players.values()) {
+            if (p.id !== playerId) {
+                p.hasActed = false;
+            }
+        }
+    }
+    
+    player.hasActed = true;
+    player.allIn = true;
+    
+    return {
+        action: 'allIn',
+        playerId,
+        playerName: player.name,
+        amount: allInAmount
+    };
+}
+                </pre>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Step-by-Step Test Instructions</h2>
+            
+            <div class="step-by-step">
+                <h4>Phase 1: Setup</h4>
+                <ol>
+                    <li>Start the poker server: <code>cd pokerv2/server && npm run dev</code></li>
+                    <li>Open the game in three different browser tabs</li>
+                    <li>Join the game with three different players (Никита, Анна, Михаил)</li>
+                    <li>Set all players to ready and start the game</li>
+                    <li>Verify all players have their starting bank amounts</li>
+                </ol>
+            </div>
+
+            <div class="step-by-step">
+                <h4>Phase 2: Create All-In Scenario</h4>
+                <ol>
+                    <li>Wait for the first betting round (preflop)</li>
+                    <li>Have Player 1 (Никита) click "Raise" button</li>
+                    <li>Verify in console: "FastGameScene: Insufficient funds for minimum raise, making all-in"</li>
+                    <li>Verify Player 1 goes all-in with $100</li>
+                    <li>Have Player 2 (Анна) click "Raise" button</li>
+                    <li>Verify Player 2 goes all-in with $50</li>
+                    <li>Have Player 3 (Михаил) click "Raise" button</li>
+                    <li>Verify Player 3 goes all-in with $25</li>
+                </ol>
+            </div>
+
+            <div class="step-by-step">
+                <h4>Phase 3: Verify Game Flow</h4>
+                <ol>
+                    <li>Check that the betting round completes properly</li>
+                    <li>Verify community cards are dealt (flop, turn, river)</li>
+                    <li>Check that all players show as [ALL IN] in their display</li>
+                    <li>Verify the pot shows the correct total ($175)</li>
+                    <li>Wait for showdown to complete</li>
+                    <li>Verify hand evaluation works with all three players</li>
+                    <li>Check that the winner receives the pot</li>
+                </ol>
+            </div>
+
+            <div class="step-by-step">
+                <h4>Phase 4: Edge Case Testing</h4>
+                <ol>
+                    <li>Start a new hand</li>
+                    <li>Test with different player order (different player goes first)</li>
+                    <li>Test with one player having exactly enough for minimum raise</li>
+                    <li>Test with players having very small amounts ($5, $10)</li>
+                    <li>Verify auto all-in still works correctly</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Expected Results</h2>
+            
+            <div class="scenario">
+                <h4>Console Logs:</h4>
+                <ul>
+                    <li><code>FastGameScene: Insufficient funds for minimum raise, making all-in</code> (3 times)</li>
+                    <li><code>Player [ID] performed action: allIn</code> (3 times)</li>
+                    <li><code>🎮 Game started in main room</code></li>
+                    <li><code>🎰 Single Room Poker Server running on port 3000</code></li>
+                </ul>
+            </div>
+
+            <div class="scenario">
+                <h4>UI Updates:</h4>
+                <ul>
+                    <li>All three players show [ALL IN] status</li>
+                    <li>Pot displays correct total ($175)</li>
+                    <li>Player bank amounts show $0 after all-in</li>
+                    <li>Action buttons are disabled for all-in players</li>
+                    <li>Game proceeds to showdown automatically</li>
+                </ul>
+            </div>
+
+            <div class="scenario">
+                <h4>Game Flow:</h4>
+                <ul>
+                    <li>Betting round completes after all players go all-in</li>
+                    <li>Community cards are dealt (flop, turn, river)</li>
+                    <li>Showdown evaluates all three hands</li>
+                    <li>Winner receives the entire pot</li>
+                    <li>Next round button appears for new hand</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Debugging Information</h2>
+            
+            <div class="code-example">
+                <h4>Key Debug Points:</h4>
+                <pre>
+// Check browser console for these messages:
+"FastGameScene: Insufficient funds for minimum raise, making all-in"
+"Player [ID] performed action: allIn"
+
+// Check server console for:
+"Player [ID] performed action: allIn"
+"🎮 Game started in main room"
+
+// Verify player states:
+- All players show [ALL IN] status
+- Bank amounts are $0
+- Pot shows correct total
+- Action buttons are disabled
+                </pre>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h4>⚠️ Important Notes:</h4>
+            <ul>
+                <li>This test requires exactly 3 players to work properly</li>
+                <li>All players must have insufficient funds for minimum raises</li>
+                <li>The auto all-in feature should trigger automatically</li>
+                <li>Server should handle multiple all-in players correctly</li>
+                <li>Pot calculation should be accurate with different all-in amounts</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Alternative Test Scenarios</h2>
+            
+            <div class="allin-test">
+                <h4>Scenario A: Mixed Actions</h4>
+                <p>One player calls, two players go all-in</p>
+                <ul>
+                    <li>Player 1: Call (has enough money)</li>
+                    <li>Player 2: Raise → Auto all-in ($50)</li>
+                    <li>Player 3: Raise → Auto all-in ($25)</li>
+                </ul>
+            </div>
+
+            <div class="allin-test">
+                <h4>Scenario B: Sequential All-In</h4>
+                <p>Players go all-in one by one in different betting rounds</p>
+                <ul>
+                    <li>Preflop: Player 1 all-in</li>
+                    <li>Flop: Player 2 all-in</li>
+                    <li>Turn: Player 3 all-in</li>
+                </ul>
+            </div>
+
+            <div class="allin-test">
+                <h4>Scenario C: Edge Cases</h4>
+                <p>Test with very small amounts and exact amounts</p>
+                <ul>
+                    <li>Player 1: $5 bank</li>
+                    <li>Player 2: $10 bank (exactly minimum raise)</li>
+                    <li>Player 3: $15 bank</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 Quick Links</h2>
+            <a href="index.html" class="button">🎮 Play Multiplayer Game</a>
+            <a href="test-ai-bot.html" class="button">🤖 Test AI Bot Game</a>
+            <a href="test-lobby-system.html" class="button">🏠 Test Lobby System</a>
+            <a href="test-raise-fix.html" class="button">💰 Test Raise Fix</a>
+            <a href="test-allin-fix.html" class="button">🎯 Test All-In Fix</a>
+            <a href="test-auto-allin.html" class="button">🔄 Test Auto All-In</a>
+            <a href="test-card-container-fix.html" class="button">🃏 Test Card Container Fix</a>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Success Criteria</h2>
+            <div class="feature-list">
+                <ul>
+                    <li><strong>Auto Conversion:</strong> All three raise attempts convert to all-in automatically</li>
+                    <li><strong>Correct Amounts:</strong> Players go all-in with their exact bank amounts</li>
+                    <li><strong>Pot Calculation:</strong> Total pot equals sum of all all-in amounts</li>
+                    <li><strong>Game Flow:</strong> Betting round completes and proceeds to showdown</li>
+                    <li><strong>UI Updates:</strong> All players show [ALL IN] status correctly</li>
+                    <li><strong>No Errors:</strong> No console errors during the process</li>
+                    <li><strong>Showdown:</strong> Hand evaluation works with multiple all-in players</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 Three Players All-In Test Page Loaded');
+            console.log('📋 This page tests the auto all-in feature with three players');
+            console.log('🔧 All three players should go all-in automatically when they can\'t afford minimum raises');
+            
+            // Add test scenario logging
+            console.log('🎰 Test Scenario: Three players with insufficient funds for minimum raises');
+            console.log('💰 Expected: Player 1 ($100), Player 2 ($50), Player 3 ($25) all go all-in');
+            console.log('🎯 Expected: Auto conversion from raise to all-in for all players');
+        });
+    </script>
+</body>
+</html> 

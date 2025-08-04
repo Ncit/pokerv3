@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Game - Card Revelation Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .test-info h2 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        .test-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-info li {
+            margin: 5px 0;
+        }
+        .game-frame {
+            width: 100%;
+            height: 800px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            background-color: #000;
+        }
+        .instructions {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        .status {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .feature-list {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .feature-list h3 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-info">
+            <h2>🃏 Card Revelation Test</h2>
+            <p>This test verifies that all players' cards are revealed after the winner is determined in the showdown phase.</p>
+            
+            <h3>Test Objectives:</h3>
+            <ul>
+                <li>✅ Verify all players' cards are revealed during showdown</li>
+                <li>✅ Confirm winning cards are highlighted with golden tint</li>
+                <li>✅ Test that folded players' cards are also revealed</li>
+                <li>✅ Ensure all-in players' cards are shown</li>
+                <li>✅ Verify hand rankings are displayed in console</li>
+                <li>✅ Test that the infinite loop issue is resolved</li>
+            </ul>
+            
+            <h3>Expected Behavior:</h3>
+            <ul>
+                <li>All players' hole cards become visible during showdown</li>
+                <li>Winning players' cards are highlighted in gold</li>
+                <li>Hand rankings are shown in the console</li>
+                <li>Winner information is displayed on screen</li>
+                <li>No infinite checking loops during showdown</li>
+                <li>Next Round button appears after showdown</li>
+            </ul>
+        </div>
+
+        <iframe src="index.html" class="game-frame" id="gameFrame"></iframe>
+
+        <div class="feature-list">
+            <h3>🎯 New Features Implemented:</h3>
+            <ul>
+                <li><strong>Complete Card Revelation:</strong> All players' cards are revealed during showdown</li>
+                <li><strong>Winner Highlighting:</strong> Winning players' cards are highlighted in gold</li>
+                <li><strong>Hand Rankings:</strong> Detailed hand rankings shown in console</li>
+                <li><strong>Fixed Infinite Loop:</strong> Three-raise limit prevents endless checking</li>
+                <li><strong>Enhanced Showdown:</strong> Comprehensive showdown results with all card information</li>
+                <li><strong>Visual Feedback:</strong> Clear indication of winners and hand strengths</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>🧪 Test Instructions:</h3>
+            <ol>
+                <li><strong>Start the server:</strong> Run <code>cd pokerv2/server && npm run dev</code></li>
+                <li><strong>Open this page</strong> in multiple browser tabs/windows to simulate multiple players</li>
+                <li><strong>Join the game</strong> with different player names in each tab</li>
+                <li><strong>Get ready</strong> in all tabs and start the game</li>
+                <li><strong>Play through a hand</strong> until showdown is reached</li>
+                <li><strong>Observe card revelation:</strong> All players' cards should become visible</li>
+                <li><strong>Check winner highlighting:</strong> Winning cards should be highlighted in gold</li>
+                <li><strong>Verify console output:</strong> Hand rankings should appear in browser console</li>
+                <li><strong>Test Next Round:</strong> Click Next Round button to start a new hand</li>
+            </ol>
+        </div>
+
+        <div class="status">
+            <strong>Test Status:</strong> Ready to test card revelation functionality
+        </div>
+    </div>
+
+    <script>
+        // Test status updates
+        const statusElement = document.querySelector('.status');
+        
+        // Listen for messages from the game iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'gameStatus') {
+                statusElement.innerHTML = `<strong>Test Status:</strong> ${event.data.message}`;
+            }
+        });
+
+        // Update status when page loads
+        statusElement.innerHTML = '<strong>Test Status:</strong> Page loaded - ready to test card revelation functionality';
+        
+        // Add some helpful tips
+        console.log('🎰 Card Revelation Test Tips:');
+        console.log('- Open browser console to see hand rankings');
+        console.log('- Watch for all cards to be revealed during showdown');
+        console.log('- Look for golden highlights on winning cards');
+        console.log('- Verify no infinite loops during showdown phase');
+    </script>
+</body>
+</html> 

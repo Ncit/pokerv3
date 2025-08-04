@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Loop Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f44336;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔄 Call Loop Debug Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Issue Description</h2>
+            <div class="test-description">
+                You encountered a call loop issue after implementing spectator functionality and button repositioning. This test helps identify and fix the problem.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Debugging Steps</h2>
+            <div class="test-description">
+                Follow these steps to identify the source of the call loop:
+            </div>
+            
+            <div class="test-steps">
+                <h4>Step 1: Check Browser Console</h4>
+                <ol>
+                    <li>Open the game in a browser</li>
+                    <li>Open Developer Tools (F12)</li>
+                    <li>Go to the Console tab</li>
+                    <li>Look for these specific log messages:</li>
+                </ol>
+                <div class="code-block">
+// Look for these messages in console:
+"FastGameScene: updateUI called recursively, preventing loop"
+"FastGameScene: updateActionButtons called recursively, preventing loop"
+"FastGameScene: Player is spectator - disabling actions"
+"FastGameScene: Hiding cards for spectator player: [Name]"
+                </div>
+            </div>
+            
+            <div class="test-steps">
+                <h4>Step 2: Identify the Trigger</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in two browser windows</li>
+                    <li>Join as different players</li>
+                    <li>Start a game</li>
+                    <li>Open a third browser window and join as a spectator</li>
+                    <li>Monitor the console for call loop messages</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Fixes Applied</h2>
+            <div class="test-description">
+                The following fixes have been applied to prevent call loops:
+            </div>
+            
+            <div class="expected-result">
+                <h4>1. Call Stack Protection in updateUI()</h4>
+                <div class="code-block">
+// Added protection to prevent recursive calls
+if (this._updatingUI) {
+    console.log('FastGameScene: updateUI called recursively, preventing loop');
+    return;
+}
+this._updatingUI = true;
+// ... method body ...
+finally {
+    this._updatingUI = false;
+}
+                </div>
+            </div>
+            
+            <div class="expected-result">
+                <h4>2. Call Stack Protection in updateActionButtons()</h4>
+                <div class="code-block">
+// Added protection to prevent recursive calls
+if (this._updatingActionButtons) {
+    console.log('FastGameScene: updateActionButtons called recursively, preventing loop');
+    return;
+}
+this._updatingActionButtons = true;
+// ... method body ...
+finally {
+    this._updatingActionButtons = false;
+}
+                </div>
+            </div>
+            
+            <div class="expected-result">
+                <h4>3. Fixed Button Creation</h4>
+                <div class="code-block">
+// Changed from using 'call' button type to 'raise' with custom config
+this.startGameButton = this.buttonManager.createButton('raise', 120, 120, {
+    scale: 0.3,
+    interactive: true,
+    cursor: 'hand'
+});
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Expected Behavior After Fixes</h2>
+            <div class="test-description">
+                After applying the fixes, the game should behave as follows:
+            </div>
+            
+            <div class="success">
+                <h4>✅ Normal Operation:</h4>
+                <ul>
+                    <li>No infinite call loops</li>
+                    <li>Spectators cannot make actions</li>
+                    <li>Spectators do not see cards</li>
+                    <li>Start game and next round buttons work properly</li>
+                    <li>Console shows normal game flow messages</li>
+                </ul>
+            </div>
+            
+            <div class="warning">
+                <h4>⚠️ If Issues Persist:</h4>
+                <ul>
+                    <li>Check if console shows recursive call prevention messages</li>
+                    <li>Verify that button positions don't overlap</li>
+                    <li>Ensure spectator functionality is working correctly</li>
+                    <li>Check for any remaining circular references</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Additional Debugging</h2>
+            <div class="test-description">
+                If the call loop persists, try these additional debugging steps:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li><strong>Check Button Overlaps:</strong> Ensure buttons at (120, 120) and (120, 180) don't overlap with other UI elements</li>
+                    <li><strong>Monitor Network Events:</strong> Check if network events are triggering excessive UI updates</li>
+                    <li><strong>Test Without Spectators:</strong> Try the game without any spectators to isolate the issue</li>
+                    <li><strong>Check Event Listeners:</strong> Verify that event listeners aren't being duplicated</li>
+                    <li><strong>Browser Performance:</strong> Use browser performance tools to identify the source of the loop</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">📋 Test Checklist</h2>
+            <div class="test-description">
+                Use this checklist to verify the fixes:
+            </div>
+            
+            <div class="test-steps">
+                <ul>
+                    <li>✅ Game starts without call loops</li>
+                    <li>✅ Spectators join without causing loops</li>
+                    <li>✅ Start game button works at new position (120, 120)</li>
+                    <li>✅ Next round button works at new position (120, 180)</li>
+                    <li>✅ Spectators cannot make actions</li>
+                    <li>✅ Spectators do not see cards</li>
+                    <li>✅ Console shows normal game flow</li>
+                    <li>✅ No recursive call prevention messages</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🚨 Emergency Fix</h2>
+            <div class="test-description">
+                If the call loop is severe and prevents testing, you can temporarily disable the problematic methods:
+            </div>
+            
+            <div class="code-block">
+// Temporary emergency fix - add this to the top of updateUI() and updateActionButtons()
+console.log('Method called - checking for loop...');
+if (this._callCount > 100) {
+    console.error('Too many calls detected, stopping execution');
+    return;
+}
+this._callCount = (this._callCount || 0) + 1;
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

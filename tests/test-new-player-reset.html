@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Player Reset</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #FFD700;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 5px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a1e;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            margin: 10px 0;
+        }
+        .warning {
+            background-color: #3a1e1e;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+            margin: 10px 0;
+        }
+        .game-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .game-link {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .game-link:hover {
+            background-color: #45a049;
+        }
+        .status {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .scenario {
+            background-color: #2a2a2a;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test New Player Reset</h1>
+        
+        <div class="test-section">
+            <div class="test-title">🎯 Test Objective</div>
+            <div class="test-description">
+                Verify that when a new player joins the game while other players are in the lobby (ready to start), 
+                the room automatically resets to allow the new player to participate from the beginning.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔧 What Was Implemented</div>
+            <div class="test-description">
+                Added logic to automatically reset the room when a new player joins during lobby state, 
+                ensuring fair participation for all players.
+            </div>
+            <div class="test-steps">
+                <strong>Implementation Details:</strong>
+                <ol>
+                    <li>Server checks if game is in lobby state when new player joins</li>
+                    <li>If lobby has ready players, room is automatically reset</li>
+                    <li>All players are notified about the reset due to new player joining</li>
+                    <li>New player can now participate from the beginning</li>
+                    <li>Client shows notification about the reset</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 Test Scenarios</div>
+            
+            <div class="scenario">
+                <strong>Scenario 1: New Player Joins During Lobby</strong>
+                <div class="test-steps">
+                    <ol>
+                        <li>Open the multiplayer game in 2 different browser tabs</li>
+                        <li>Join with 2 different players (e.g., Player 1, Player 2)</li>
+                        <li>Both players click "Ready"</li>
+                        <li>Open a third browser tab and join with a third player (Player 3)</li>
+                        <li>Verify that the room resets and shows notification about new player joining</li>
+                        <li>Verify that all 3 players are now in lobby state and can click "Ready"</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="scenario">
+                <strong>Scenario 2: New Player Joins During Active Game</strong>
+                <div class="test-steps">
+                    <ol>
+                        <li>Start a game with 2 players</li>
+                        <li>Play a few rounds</li>
+                        <li>Open a third browser tab and join with a third player</li>
+                        <li>Verify that the room does NOT reset (game continues normally)</li>
+                        <li>Third player should see they joined but game is in progress</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="scenario">
+                <strong>Scenario 3: New Player Joins Empty Lobby</strong>
+                <div class="test-steps">
+                    <ol>
+                        <li>Open the multiplayer game in 1 browser tab</li>
+                        <li>Join as the first player</li>
+                        <li>Open a second browser tab and join as second player</li>
+                        <li>Verify that no reset occurs (normal lobby behavior)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">✅ Expected Results</div>
+            <div class="expected-result">
+                <strong>Scenario 1:</strong> Room should reset when new player joins during lobby with ready players. 
+                All players should see notification: "[Player Name] присоединился к игре. Комната сброшена."
+            </div>
+            <div class="expected-result">
+                <strong>Scenario 2:</strong> Room should NOT reset when new player joins during active game. 
+                Game should continue normally for existing players.
+            </div>
+            <div class="expected-result">
+                <strong>Scenario 3:</strong> No reset should occur when joining empty lobby. 
+                Normal lobby behavior should be maintained.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">⚠️ Important Notes</div>
+            <div class="warning">
+                <strong>Server Restart Required:</strong> Make sure to restart the server after applying the fixes 
+                so that the updated server.js code is loaded.
+            </div>
+            <div class="warning">
+                <strong>Multiple Browser Sessions:</strong> Use different browser sessions or incognito windows 
+                to simulate different players joining the game.
+            </div>
+            <div class="warning">
+                <strong>Timing:</strong> The reset only happens when the game is in lobby state AND there are ready players. 
+                If the game has already started, new players join as spectators.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎮 Game Links</div>
+            <div class="game-links">
+                <a href="index.html" class="game-link" target="_blank">Multiplayer Game</a>
+                <a href="test-turn-fix.html" class="game-link" target="_blank">Turn Fix Test</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔍 Debug Information</div>
+            <div class="status">
+                <strong>Server Status:</strong> <span id="serverStatus">Checking...</span><br>
+                <strong>Last Error:</strong> <span id="lastError">None</span><br>
+                <strong>Test Status:</strong> <span id="testStatus">Ready to test</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📝 Test Log</div>
+            <div class="status" id="testLog">
+                Test log will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some basic status checking
+        function updateStatus() {
+            const serverStatus = document.getElementById('serverStatus');
+            const lastError = document.getElementById('lastError');
+            const testStatus = document.getElementById('testStatus');
+            const testLog = document.getElementById('testLog');
+
+            // Check if server is running (basic check)
+            fetch('http://localhost:3000/health', { method: 'GET' })
+                .then(response => {
+                    if (response.ok) {
+                        serverStatus.textContent = 'Running';
+                        serverStatus.style.color = '#4CAF50';
+                    } else {
+                        serverStatus.textContent = 'Error';
+                        serverStatus.style.color = '#f44336';
+                    }
+                })
+                .catch(error => {
+                    serverStatus.textContent = 'Not running';
+                    serverStatus.style.color = '#f44336';
+                    lastError.textContent = error.message;
+                });
+
+            // Add test log entry
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.innerHTML += `<div>[${timestamp}] Test page loaded. Ready to test new player reset functionality.</div>`;
+        }
+
+        // Update status when page loads
+        document.addEventListener('DOMContentLoaded', updateStatus);
+
+        // Add some helpful console logging
+        console.log('🧪 New Player Reset Test Page Loaded');
+        console.log('📋 Test Scenarios:');
+        console.log('1. New player joins during lobby with ready players → Room should reset');
+        console.log('2. New player joins during active game → No reset, game continues');
+        console.log('3. New player joins empty lobby → No reset, normal behavior');
+    </script>
+</body>
+</html> 

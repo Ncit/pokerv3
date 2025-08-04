@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bot Black Screen Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            width: 1280px;
+            height: 720px;
+            margin: 0 auto;
+            border: 2px solid #333;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .debug-info {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Bot Black Screen Test</h1>
+    <p>This test reproduces the black screen issue when reopening AIBotScene.</p>
+    
+    <div class="controls">
+        <button onclick="openAIBot()">Open AI Bot Scene</button>
+        <button onclick="goToLobby()">Go to Lobby</button>
+        <button onclick="checkScenes()">Check Active Scenes</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div class="debug-info" id="debugInfo">
+        <strong>Debug Info:</strong><br>
+        <span id="sceneInfo">No scenes active</span><br>
+        <span id="textureInfo">No texture info</span>
+    </div>
+    
+    <div id="gameContainer"></div>
+
+    <!-- Load Phaser -->
+    <script src="dependencies/phaser.js"></script>
+    
+    <!-- Load dependencies -->
+    <script src="dependencies/rexui.js"></script>
+    <script src="dependencies/vkbridge.js"></script>
+    
+    <!-- Load configs -->
+    <script src="client/src/config/AssetConfig.js"></script>
+    <script src="client/src/config/ButtonConfig.js"></script>
+    <script src="client/src/config/GameConfig.js"></script>
+    <script src="client/src/config/PlayerConfig.js"></script>
+    
+    <!-- Load utils -->
+    <script src="client/src/utils/AssetHelper.js"></script>
+    <script src="client/src/utils/EventManager.js"></script>
+    <script src="client/src/utils/HandEvaluator.js"></script>
+    <script src="client/src/utils/PositionCalculator.js"></script>
+    
+    <!-- Load managers -->
+    <script src="client/src/managers/ButtonManager.js"></script>
+    <script src="client/src/managers/CardManager.js"></script>
+    <script src="client/src/managers/NetworkManager.js"></script>
+    <script src="client/src/managers/PlayerManager.js"></script>
+    <script src="client/src/managers/UIManager.js"></script>
+    
+    <!-- Load scenes -->
+    <script src="client/src/scenes/LobbyScene.js"></script>
+    <script src="client/src/scenes/AIBotScene.js"></script>
+    
+    <!-- Load main -->
+    <script src="client/src/main.js"></script>
+
+    <script>
+        // Mock VK data for testing
+        window.appData = {
+            first_name: 'Test User',
+            vk_user_id: 12345
+        };
+        
+        // Enable debug mode
+        window.isDebug = true;
+        
+        let game;
+        let currentSceneKey = null;
+        
+        function initGame() {
+            const config = {
+                type: Phaser.AUTO,
+                width: 1280,
+                height: 720,
+                parent: 'gameContainer',
+                backgroundColor: '#2c3e50',
+                scene: [LobbyScene],
+                physics: {
+                    default: 'arcade',
+                    arcade: {
+                        gravity: { y: 0 },
+                        debug: false
+                    }
+                }
+            };
+            
+            game = new Phaser.Game(config);
+            
+            // Add scene event listeners for debugging
+            game.events.on('scenecreate', (scene) => {
+                console.log(`Scene created: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenestart', (scene) => {
+                console.log(`Scene started: ${scene.scene.key}`);
+                currentSceneKey = scene.scene.key;
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenestop', (scene) => {
+                console.log(`Scene stopped: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenewake', (scene) => {
+                console.log(`Scene woke: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenesleep', (scene) => {
+                console.log(`Scene slept: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenepause', (scene) => {
+                console.log(`Scene paused: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('sceneresume', (scene) => {
+                console.log(`Scene resumed: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+            
+            game.events.on('scenes shutdown', (scene) => {
+                console.log(`Scene shutdown: ${scene.scene.key}`);
+                updateDebugInfo();
+            });
+        }
+        
+        function openAIBot() {
+            console.log('Opening AI Bot Scene...');
+            
+            // Create a unique scene key for this AI bot session
+            const sessionId = Date.now();
+            const sceneKey = `AIBotScene_${sessionId}`;
+            
+            console.log(`Creating AI Bot Scene with key: ${sceneKey}`);
+            
+            // Import and create a new AIBotScene instance with unique key
+            import('./client/src/scenes/AIBotScene.js').then(({ AIBotScene }) => {
+                console.log('AIBotScene module loaded successfully');
+                
+                // Check if scene already exists
+                if (game.scene.isActive(sceneKey)) {
+                    console.log(`Scene ${sceneKey} is already active, stopping it first`);
+                    game.scene.stop(sceneKey);
+                }
+                
+                // Add the new scene instance with unique key
+                game.scene.add(sceneKey, new AIBotScene(sceneKey), false);
+                console.log(`Scene ${sceneKey} added to game`);
+                
+                // Start the new scene
+                game.scene.start(sceneKey);
+                console.log(`Scene ${sceneKey} started`);
+                
+                updateDebugInfo();
+            }).catch(error => {
+                console.error('Failed to load AIBotScene module:', error);
+            });
+        }
+        
+        function goToLobby() {
+            console.log('Going to Lobby Scene...');
+            
+            // Stop current scene if it's an AI Bot scene
+            if (currentSceneKey && currentSceneKey.startsWith('AIBotScene_')) {
+                console.log(`Stopping AI Bot scene: ${currentSceneKey}`);
+                game.scene.stop(currentSceneKey);
+                
+                // Remove the scene to free up memory
+                setTimeout(() => {
+                    if (game.scene.getScene(currentSceneKey)) {
+                        console.log(`Removing AI Bot scene: ${currentSceneKey}`);
+                        game.scene.remove(currentSceneKey);
+                    }
+                }, 100);
+            }
+            
+            // Start lobby scene
+            game.scene.start('LobbyScene');
+            updateDebugInfo();
+        }
+        
+        function checkScenes() {
+            console.log('=== Active Scenes ===');
+            game.scene.scenes.forEach(scene => {
+                console.log(`Scene: ${scene.scene.key}, Active: ${scene.scene.isActive()}, Visible: ${scene.scene.isVisible()}`);
+            });
+            
+            console.log('=== Scene Manager Info ===');
+            console.log('Current scene:', game.scene.getScene(currentSceneKey));
+            console.log('Scene keys:', game.scene.getSceneKeys());
+            
+            updateDebugInfo();
+        }
+        
+        function updateDebugInfo() {
+            const sceneInfo = document.getElementById('sceneInfo');
+            const textureInfo = document.getElementById('textureInfo');
+            
+            // Update scene info
+            const activeScenes = game.scene.scenes.filter(scene => scene.scene.isActive());
+            sceneInfo.textContent = `Active scenes: ${activeScenes.map(s => s.scene.key).join(', ')}`;
+            
+            // Update texture info
+            const textureCount = Object.keys(game.textures.list).length;
+            textureInfo.textContent = `Loaded textures: ${textureCount}`;
+        }
+        
+        function clearConsole() {
+            console.clear();
+            console.log('Console cleared');
+        }
+        
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            console.log('Page loaded, initializing game...');
+            initGame();
+        });
+        
+        // Add global error handler
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+        
+        // Add unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+</body>
+</html> 

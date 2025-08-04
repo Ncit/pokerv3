@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Functionality Test - FastGameScene</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .test-info {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .test-info h2 {
+            color: #00ff00;
+            margin-top: 0;
+        }
+        
+        .test-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .test-info li {
+            margin: 5px 0;
+        }
+        
+        .test-info .highlight {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+        
+        #game-container {
+            width: 1280px;
+            height: 720px;
+            margin: 0 auto;
+            border: 2px solid #444;
+            border-radius: 5px;
+        }
+        
+        .debug-panel {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .debug-panel h3 {
+            color: #00aaff;
+            margin-top: 0;
+        }
+        
+        .debug-panel button {
+            background-color: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .debug-panel button:hover {
+            background-color: #555;
+        }
+        
+        .debug-panel button:active {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>🎮 Chat Functionality Test - FastGameScene</h2>
+        <p>This test verifies the new chat functionality for multiplayer games in FastGameScene.</p>
+        
+        <h3>✅ Features to Test:</h3>
+        <ul>
+            <li><span class="highlight">Multiplayer Detection:</span> Chat button only appears when multiple players are present</li>
+            <li><span class="highlight">Chat UI:</span> Click chat button to open/close chat interface</li>
+            <li><span class="highlight">Message Input:</span> Type messages and press Enter or click Send</li>
+            <li><span class="highlight">Keyboard Shortcuts:</span> Enter to open chat, ESC to close</li>
+            <li><span class="highlight">Message History:</span> Recent messages are displayed in chat window</li>
+            <li><span class="highlight">Network Integration:</span> Messages sent through NetworkManager</li>
+        </ul>
+        
+        <h3>🔧 Test Instructions:</h3>
+        <ul>
+            <li>1. Load the game and join a multiplayer room</li>
+            <li>2. Verify chat button appears (only in multiplayer)</li>
+            <li>3. Click chat button or press Enter to open chat</li>
+            <li>4. Type a message and send it</li>
+            <li>5. Test keyboard shortcuts (Enter, ESC)</li>
+            <li>6. Verify chat closes when leaving multiplayer</li>
+        </ul>
+    </div>
+
+    <div id="game-container"></div>
+
+    <div class="debug-panel">
+        <h3>🐛 Debug Controls</h3>
+        <button onclick="simulateMultiplayer()">Simulate Multiplayer (Show Chat)</button>
+        <button onclick="simulateSinglePlayer()">Simulate Single Player (Hide Chat)</button>
+        <button onclick="simulateChatMessage()">Simulate Chat Message</button>
+        <button onclick="toggleDebugMode()">Toggle Debug Mode</button>
+        <button onclick="openChat()">Open Chat (Enter)</button>
+        <button onclick="closeChat()">Close Chat (ESC)</button>
+    </div>
+
+    <!-- Phaser.js -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    
+    <!-- Socket.io -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        // Set up debug mode
+        window.isDebug = true;
+        window.appData = {
+            first_name: 'TestPlayer',
+            vk_user_id: 12345,
+        };
+
+        // Debug functions
+        function simulateMultiplayer() {
+            console.log('Debug: Simulating multiplayer mode');
+            if (window.gameScene && window.gameScene.chatManager) {
+                window.gameScene.chatManager.isMultiplayer = true;
+                window.gameScene.chatManager.updateChatVisibility();
+            }
+        }
+
+        function simulateSinglePlayer() {
+            console.log('Debug: Simulating single player mode');
+            if (window.gameScene && window.gameScene.chatManager) {
+                window.gameScene.chatManager.isMultiplayer = false;
+                window.gameScene.chatManager.updateChatVisibility();
+            }
+        }
+
+        function simulateChatMessage() {
+            console.log('Debug: Simulating chat message');
+            if (window.gameScene && window.gameScene.chatManager) {
+                window.gameScene.chatManager.addMessage('TestPlayer', 'This is a test message!', Date.now());
+            }
+        }
+
+        function toggleDebugMode() {
+            window.isDebug = !window.isDebug;
+            console.log('Debug mode:', window.isDebug);
+        }
+
+        function openChat() {
+            if (window.gameScene && window.gameScene.chatManager) {
+                window.gameScene.chatManager.openChat();
+            }
+        }
+
+        function closeChat() {
+            if (window.gameScene && window.gameScene.chatManager) {
+                window.gameScene.chatManager.closeChat();
+            }
+        }
+
+        // Game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 1280,
+            height: 720,
+            parent: 'game-container',
+            backgroundColor: '#2c3e50',
+            scene: {
+                preload: function() {
+                    // Load minimal assets for testing
+                    this.load.image('game_bg', 'assets/game_bg.png');
+                    this.load.image('gaming_table', 'assets/gaming_table.png');
+                    this.load.image('chat_button', 'assets/chat_button.png');
+                    this.load.image('menuGame', 'assets/settings_game.png');
+                    this.load.image('settingsGame', 'assets/settings_game.png');
+                },
+                create: function() {
+                    console.log('Test scene created');
+                    this.add.text(640, 360, 'Chat Test Scene\nPress F12 for console', {
+                        fontSize: '24px',
+                        fill: '#ffffff'
+                    }).setOrigin(0.5);
+                }
+            }
+        };
+
+        // Create game instance
+        const game = new Phaser.Game(config);
+
+        // Store reference for debug access
+        window.gameScene = null;
+
+        // Load the actual FastGameScene after a delay
+        setTimeout(() => {
+            // Import and start FastGameScene
+            import('./client/src/scenes/FastGameScene.js')
+                .then(({ FastGameScene }) => {
+                    console.log('FastGameScene loaded successfully');
+                    
+                    // Stop the test scene and start FastGameScene
+                    game.scene.stop('default');
+                    game.scene.add('FastGameScene', FastGameScene, true);
+                    
+                    // Store reference for debug
+                    setTimeout(() => {
+                        window.gameScene = game.scene.getScene('FastGameScene');
+                        console.log('Game scene reference stored for debugging');
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Failed to load FastGameScene:', error);
+                    document.getElementById('game-container').innerHTML = 
+                        '<div style="color: red; padding: 20px; text-align: center;">' +
+                        'Failed to load FastGameScene. Check console for details.' +
+                        '</div>';
+                });
+        }, 2000);
+    </script>
+</body>
+</html> 

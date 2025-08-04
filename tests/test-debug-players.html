@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Player Selection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #040218;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .test-info {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        .player-list {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .player-card {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            min-width: 150px;
+        }
+        .player-card.selected {
+            border-color: #00ff00;
+            background-color: #1a2a1a;
+        }
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: block;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎰 Debug Player Selection Test</h1>
+    
+    <div class="test-info">
+        <h2>Test Instructions</h2>
+        <p>This page tests the debug player selection feature. When you click "Start Game Test", it will:</p>
+        <ol style="text-align: left;">
+            <li>Set <code>window.isDebug = true</code></li>
+            <li>Open the poker game</li>
+            <li>Show the debug player selection screen</li>
+            <li>Allow you to select one of three players</li>
+        </ol>
+    </div>
+
+    <div class="test-info">
+        <h3>Available Debug Players</h3>
+        <div class="player-list">
+            <div class="player-card" id="player1">
+                <img src="https://gravatar.com/avatar/2ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x" alt="Никита" class="avatar">
+                <h4>Никита</h4>
+                <p>ID: 123</p>
+            </div>
+            <div class="player-card" id="player2">
+                <img src="https://gravatar.com/avatar/3ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x" alt="Анна" class="avatar">
+                <h4>Анна</h4>
+                <p>ID: 456</p>
+            </div>
+            <div class="player-card" id="player3">
+                <img src="https://gravatar.com/avatar/4ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x" alt="Михаил" class="avatar">
+                <h4>Михаил</h4>
+                <p>ID: 789</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-info">
+        <h3>Test Controls</h3>
+        <button class="test-button" onclick="startGameTest()">🎮 Start Game Test</button>
+        <button class="test-button" onclick="testPlayerSelection()">👤 Test Player Selection</button>
+        <button class="test-button" onclick="clearSelection()">🔄 Clear Selection</button>
+    </div>
+
+    <div class="test-info">
+        <h3>Test Results</h3>
+        <div id="test-results">
+            <p>No tests run yet. Click a test button above to start.</p>
+        </div>
+    </div>
+
+    <script>
+        let selectedPlayer = null;
+
+        function startGameTest() {
+            // Set debug mode
+            window.isDebug = true;
+            
+            // Open the game in a new window
+            const gameWindow = window.open('./index.html', '_blank', 'width=1280,height=720');
+            
+            updateTestResults('Game test started! Check the new window for the debug player selection screen.');
+        }
+
+        function testPlayerSelection() {
+            const players = [
+                {
+                    id: 1,
+                    name: 'Никита',
+                    photo: 'https://gravatar.com/avatar/2ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x',
+                    vk_user_id: 123
+                },
+                {
+                    id: 2,
+                    name: 'Анна',
+                    photo: 'https://gravatar.com/avatar/3ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x',
+                    vk_user_id: 456
+                },
+                {
+                    id: 3,
+                    name: 'Михаил',
+                    photo: 'https://gravatar.com/avatar/4ee1f504b415b376c586641aee2c3194?s=400&d=robohash&r=x',
+                    vk_user_id: 789
+                }
+            ];
+
+            // Simulate player selection
+            const randomPlayer = players[Math.floor(Math.random() * players.length)];
+            selectedPlayer = randomPlayer;
+
+            // Update visual selection
+            clearVisualSelection();
+            document.getElementById(`player${randomPlayer.id}`).classList.add('selected');
+
+            // Simulate setting appData
+            window.appData = {
+                vk_user_id: randomPlayer.vk_user_id,
+                first_name: randomPlayer.name,
+            };
+
+            updateTestResults(`Selected player: ${randomPlayer.name} (ID: ${randomPlayer.vk_user_id})<br>
+                             appData set: ${JSON.stringify(window.appData, null, 2)}`);
+        }
+
+        function clearSelection() {
+            selectedPlayer = null;
+            window.appData = null;
+            clearVisualSelection();
+            updateTestResults('Selection cleared. appData reset to null.');
+        }
+
+        function clearVisualSelection() {
+            document.querySelectorAll('.player-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+        function updateTestResults(message) {
+            document.getElementById('test-results').innerHTML = `
+                <p><strong>Last Action:</strong> ${new Date().toLocaleTimeString()}</p>
+                <p>${message}</p>
+                <p><strong>Current appData:</strong> ${window.appData ? JSON.stringify(window.appData) : 'null'}</p>
+            `;
+        }
+
+        // Initialize
+        window.isDebug = true;
+        updateTestResults('Debug mode enabled. Ready for testing.');
+    </script>
+</body>
+</html> 

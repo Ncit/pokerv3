@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectator Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-title {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #ccc;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .test-steps {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+        .expected-result {
+            background-color: #1e3a5f;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .expected-result h4 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .code-block {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .warning {
+            background-color: #ff9800;
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🎮 Spectator Functionality Test</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test Overview</h2>
+            <div class="test-description">
+                This test verifies that players who join a room during an active game are properly treated as spectators and cannot participate in the game mechanics.
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🧪 Test Scenario 1: New Player Joins During Active Game</h2>
+            <div class="test-description">
+                Test that a new player joining during an active game is marked as a spectator and cannot participate.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start the server: <code>cd pokerv2/server && npm start</code></li>
+                    <li>Open the game in two browser windows/tabs</li>
+                    <li>In the first window, join as "Player1"</li>
+                    <li>In the second window, join as "Player2"</li>
+                    <li>Start the game (both players should be ready automatically)</li>
+                    <li>Once the game is in progress (cards dealt, betting round started), open a third browser window</li>
+                    <li>In the third window, join as "Player3"</li>
+                    <li>Observe the behavior of Player3</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Player3 should be marked as a <span class="highlight">spectator</span> in the server logs</li>
+                    <li>Player3 should see "[SPECTATOR]" next to their name in the UI</li>
+                    <li>Player3 should NOT receive any cards</li>
+                    <li>Player3 should NOT be able to click any action buttons (fold, call, raise, all-in)</li>
+                    <li>Player3 should NOT receive turns</li>
+                    <li>Player3 should be able to see the game progress and chat</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔄 Test Scenario 2: Player Reconnects During Active Game</h2>
+            <div class="test-description">
+                Test that a player who disconnects and reconnects during an active game remains as a spectator.
+            </div>
+            
+            <div class="test-steps">
+                <h4>Test Steps:</h4>
+                <ol>
+                    <li>Start with a 3-player game in progress</li>
+                    <li>Have Player1 disconnect (close browser tab/window)</li>
+                    <li>Wait a moment for the server to detect the disconnect</li>
+                    <li>Have Player1 reconnect (open new browser window and join with same name)</li>
+                    <li>Observe Player1's behavior after reconnection</li>
+                </ol>
+            </div>
+            
+            <div class="expected-result">
+                <h4>Expected Results:</h4>
+                <ul>
+                    <li>Player1 should be marked as a <span class="highlight">spectator</span> after reconnection</li>
+                    <li>Player1 should see "[SPECTATOR]" next to their name</li>
+                    <li>Player1 should NOT be able to make any actions</li>
+                    <li>Player1 should be able to see the game progress</li>
+                    <li>The game should continue normally for the other players</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔍 Server-Side Verification</h2>
+            <div class="test-description">
+                Check the server console logs to verify spectator handling.
+            </div>
+            
+            <div class="code-block">
+// Expected server logs when a new player joins during active game:
+🆕 New player Player3 joining...
+👁️ Player Player3 joined as spectator during active game
+
+// Expected server logs when a player reconnects during active game:
+🔄 Player Player1 reconnecting...
+👁️ Reconnected player Player1 remains as spectator during active game
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🎯 Key Implementation Details</h2>
+            <div class="test-description">
+                The spectator functionality is implemented through several mechanisms:
+            </div>
+            
+            <div class="code-block">
+// Server-side spectator marking
+isSpectator: isGameInProgress // Mark as spectator if joining during game
+
+// Server-side action prevention
+if (player.isSpectator) {
+    throw new Error('Spectators cannot make actions');
+}
+
+// Server-side active player filtering
+getActivePlayers() {
+    return Array.from(this.players.values()).filter(p => 
+        !p.folded && !p.disconnected && !p.isSpectator
+    );
+}
+
+// Client-side action prevention
+if (myPlayer && myPlayer.isSpectator) {
+    console.log('FastGameScene: Spectators cannot make actions');
+    return;
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">⚠️ Important Notes</h2>
+            <div class="warning">
+                <strong>Spectator Conversion:</strong> Spectators are only converted to active players when:
+                <ul>
+                    <li>The game ends and returns to lobby state</li>
+                    <li>A new game starts (all spectators become active players)</li>
+                </ul>
+            </div>
+            
+            <div class="success">
+                <strong>Spectator Benefits:</strong> Spectators can:
+                <ul>
+                    <li>Watch the game in real-time</li>
+                    <li>Use the chat system</li>
+                    <li>See all player actions and cards (when revealed)</li>
+                    <li>Join the next game as an active player</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">🔧 Troubleshooting</h2>
+            <div class="test-description">
+                If the spectator functionality is not working as expected:
+            </div>
+            
+            <div class="test-steps">
+                <ol>
+                    <li>Check server console for spectator-related logs</li>
+                    <li>Verify that <code>isSpectator</code> flag is being set correctly</li>
+                    <li>Check that action buttons are properly disabled for spectators</li>
+                    <li>Ensure that <code>getActivePlayerOrder()</code> excludes spectators</li>
+                    <li>Verify that reconnection logic preserves spectator status</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

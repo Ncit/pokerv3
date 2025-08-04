@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showdown AI Cards Only Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            background-color: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 10px;
+        }
+        .game-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .debug-info {
+            background-color: #222;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status {
+            background-color: #2a5a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .error {
+            background-color: #5a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .warning {
+            background-color: #5a5a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🃏 Showdown AI Cards Only Test</h1>
+        
+        <div class="test-info">
+            <h3>Test Purpose</h3>
+            <p>This test verifies that during showdown in the AI Bot Scene, only AI player cards are revealed face-up while human player cards remain face down.</p>
+        </div>
+        
+        <div class="test-steps">
+            <h3>Test Steps</h3>
+            <ol>
+                <li><strong>Start the game:</strong> The AI Bot Scene should load with 2 AI players and 1 human player</li>
+                <li><strong>Play through a hand:</strong> Take actions (call, fold, raise) to reach showdown</li>
+                <li><strong>Observe showdown:</strong> When showdown occurs, only AI player cards should be revealed</li>
+                <li><strong>Check AI cards:</strong> AI player cards should be face-up with rotation (-12° and +12°)</li>
+                <li><strong>Check human cards:</strong> Human player cards should remain face-down (back of card visible)</li>
+            </ol>
+        </div>
+        
+        <div class="game-container">
+            <div id="game"></div>
+        </div>
+        
+        <div class="debug-info" id="debugInfo">
+            <strong>Debug Information:</strong><br>
+            <div id="debugContent">Loading...</div>
+        </div>
+        
+        <div class="status" id="status">
+            <strong>Status:</strong> Initializing...
+        </div>
+    </div>
+
+    <!-- Phaser and dependencies -->
+    <script src="dependencies/phaser.js"></script>
+    <script src="dependencies/rexui.js"></script>
+    <script src="dependencies/vkbridge.js"></script>
+    
+    <!-- Game scripts -->
+    <script src="client/src/config/AssetConfig.js"></script>
+    <script src="client/src/config/ButtonConfig.js"></script>
+    <script src="client/src/config/GameConfig.js"></script>
+    <script src="client/src/config/PlayerConfig.js"></script>
+    <script src="client/src/utils/AssetHelper.js"></script>
+    <script src="client/src/utils/EventManager.js"></script>
+    <script src="client/src/utils/HandEvaluator.js"></script>
+    <script src="client/src/utils/PositionCalculator.js"></script>
+    <script src="client/src/managers/ButtonManager.js"></script>
+    <script src="client/src/managers/CardManager.js"></script>
+    <script src="client/src/managers/PlayerManager.js"></script>
+    <script src="client/src/managers/UIManager.js"></script>
+    <script src="client/src/scenes/AIBotScene.js"></script>
+    <script src="client/src/scenes/LoadingScene.js"></script>
+    <script src="client/src/scenes/LobbyScene.js"></script>
+    <script src="client/src/scripts/vklogic.js"></script>
+    <script src="client/src/main.js"></script>
+
+    <script>
+        // Test configuration
+        window.isDebug = true;
+        window.appData = {
+            first_name: 'Test',
+            vk_user_id: '12345'
+        };
+
+        // Debug logging
+        const debugContent = document.getElementById('debugContent');
+        const statusDiv = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugContent.scrollTop = debugContent.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'status') {
+            statusDiv.innerHTML = `<strong>Status:</strong> ${message}`;
+            statusDiv.className = type;
+        }
+
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log('LOG: ' + args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log('ERROR: ' + args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log('WARN: ' + args.join(' '));
+        };
+
+        // Test specific monitoring
+        let originalShowdown;
+        let originalFlipCard;
+        let showdownOccurred = false;
+
+        // Wait for the game to load
+        window.addEventListener('load', () => {
+            log('Page loaded, waiting for Phaser to initialize...');
+            
+            // Monitor for AI Bot Scene creation
+            const checkForScene = setInterval(() => {
+                if (window.game && window.game.scene && window.game.scene.getScene('AIBotScene')) {
+                    clearInterval(checkForScene);
+                    log('AI Bot Scene detected, setting up showdown monitoring...');
+                    setupShowdownMonitoring();
+                }
+            }, 100);
+        });
+
+        function setupShowdownMonitoring() {
+            const scene = window.game.scene.getScene('AIBotScene');
+            
+            if (!scene) {
+                log('ERROR: AI Bot Scene not found');
+                return;
+            }
+
+            // Monitor showdown method
+            originalShowdown = scene.showdown;
+            scene.showdown = function() {
+                log('🎯 SHOWDOWN STARTED - monitoring AI cards only revelation');
+                showdownOccurred = true;
+                
+                const result = originalShowdown.call(this);
+                
+                // Check card states after a delay
+                setTimeout(() => {
+                    checkCardStates();
+                }, 1500);
+                
+                return result;
+            };
+
+            // Monitor CardManager methods
+            if (scene.cardManager) {
+                originalFlipCard = scene.cardManager.flipCard;
+
+                scene.cardManager.flipCard = function(playerNumber, cardIndex) {
+                    log(`🔄 flipCard called for player ${playerNumber}, card ${cardIndex}`);
+                    
+                    // Check if this is an AI player
+                    const playerIndex = playerNumber - 1;
+                    const player = scene.gameState.players[playerIndex];
+                    const isAI = player && player.isAI;
+                    
+                    if (isAI) {
+                        log(`🤖 AI player ${player.name} - card will be flipped`);
+                    } else {
+                        log(`👤 Human player ${player ? player.name : 'Unknown'} - card should NOT be flipped`);
+                    }
+                    
+                    const result = originalFlipCard.call(this, playerNumber, cardIndex);
+                    
+                    // Check card state after flip
+                    setTimeout(() => {
+                        const cardData = this.getCard(playerNumber, cardIndex);
+                        if (cardData && cardData.sprite) {
+                            const rotation = Phaser.Math.RadToDeg(cardData.sprite.rotation);
+                            const isFaceUp = cardData.faceUp;
+                            
+                            if (isAI) {
+                                log(`🤖 AI card ${cardIndex} for player ${playerNumber}: faceUp=${isFaceUp}, rotation=${rotation.toFixed(1)}°`);
+                                if (isFaceUp && Math.abs(rotation) > 5) {
+                                    log(`✅ SUCCESS: AI card properly flipped with rotation`);
+                                } else {
+                                    log(`⚠️ WARNING: AI card not properly flipped`);
+                                }
+                            } else {
+                                log(`👤 Human card ${cardIndex} for player ${playerNumber}: faceUp=${isFaceUp}, rotation=${rotation.toFixed(1)}°`);
+                                if (!isFaceUp) {
+                                    log(`✅ SUCCESS: Human card correctly remains face down`);
+                                } else {
+                                    log(`❌ ERROR: Human card was flipped - should remain face down`);
+                                }
+                            }
+                        }
+                    }, 100);
+                    
+                    return result;
+                };
+            }
+
+            log('✅ Showdown monitoring setup complete');
+            updateStatus('Showdown monitoring active - game should start automatically');
+        }
+
+        function checkCardStates() {
+            const scene = window.game.scene.getScene('AIBotScene');
+            if (!scene || !scene.cardManager) return;
+
+            log('🔍 Checking all card states after showdown...');
+            
+            let aiCardsCorrect = true;
+            let humanCardsCorrect = true;
+            let aiCardCount = 0;
+            let humanCardCount = 0;
+            
+            // Check all players' cards
+            scene.gameState.players.forEach((player, playerIndex) => {
+                if (player.hand && player.hand.length > 0) {
+                    for (let cardIndex = 0; cardIndex < player.hand.length; cardIndex++) {
+                        const cardData = scene.cardManager.getCard(playerIndex + 1, cardIndex);
+                        if (cardData && cardData.sprite) {
+                            const rotation = Phaser.Math.RadToDeg(cardData.sprite.rotation);
+                            const isFaceUp = cardData.faceUp;
+                            
+                            if (player.isAI) {
+                                aiCardCount++;
+                                log(`🔍 AI Player ${player.name} card ${cardIndex}: faceUp=${isFaceUp}, rotation=${rotation.toFixed(1)}°`);
+                                
+                                // AI cards should be face up with rotation
+                                if (!isFaceUp || Math.abs(rotation) < 5) {
+                                    log(`❌ ERROR: AI card should be face up with rotation`);
+                                    aiCardsCorrect = false;
+                                }
+                            } else {
+                                humanCardCount++;
+                                log(`🔍 Human Player ${player.name} card ${cardIndex}: faceUp=${isFaceUp}, rotation=${rotation.toFixed(1)}°`);
+                                
+                                // Human cards should remain face down
+                                if (isFaceUp) {
+                                    log(`❌ ERROR: Human card should remain face down`);
+                                    humanCardsCorrect = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            if (aiCardsCorrect && humanCardsCorrect) {
+                log('✅ SUCCESS: All cards in correct state');
+                log(`📊 AI cards flipped: ${aiCardCount}, Human cards face down: ${humanCardCount}`);
+                updateStatus('Test PASSED: Only AI cards flipped during showdown', 'status');
+            } else {
+                log('❌ FAILED: Some cards in incorrect state');
+                if (!aiCardsCorrect) {
+                    log('❌ AI cards not properly flipped');
+                }
+                if (!humanCardsCorrect) {
+                    log('❌ Human cards incorrectly flipped');
+                }
+                updateStatus('Test FAILED: Card states incorrect during showdown', 'error');
+            }
+        }
+
+        // Auto-start the AI Bot Scene after a delay
+        setTimeout(() => {
+            if (window.game && window.game.scene) {
+                log('🚀 Auto-starting AI Bot Scene...');
+                window.game.scene.start('AIBotScene');
+                updateStatus('AI Bot Scene started - waiting for showdown', 'status');
+            }
+        }, 2000);
+    </script>
+</body>
+</html> 

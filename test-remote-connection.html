@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Server Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Remote Server Connection Test</h1>
+        
+        <div class="status info">
+            <strong>Server:</strong> https://nikmobdev.ru/pokerserver
+        </div>
+        
+        <div>
+            <button onclick="testEnvironment()">Test Environment Config</button>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div id="status" class="status info">
+            Ready to test...
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script type="module">
+        // Import the environment switcher
+        import environmentSwitcher from './src/utils/EnvironmentSwitcher.js';
+        
+        window.env = environmentSwitcher;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        window.testEnvironment = function() {
+            log('🔄 Testing environment configuration...');
+            
+            try {
+                log(`Current environment: ${env.current()}`);
+                
+                // Check if the environment config is loaded
+                if (window.gameConfig) {
+                    log(`Server URL: ${window.gameConfig.api?.baseUrl || 'Not set'}`);
+                }
+                
+                updateStatus('Environment configuration loaded successfully', 'success');
+            } catch (error) {
+                log(`❌ Error checking environment: ${error.message}`);
+                updateStatus('Failed to check environment', 'error');
+            }
+        };
+        
+        window.testConnection = function() {
+            log('🔌 Testing connection to remote server...');
+            
+            // Test the API endpoint
+            fetch('https://nikmobdev.ru/pokerserver/api/game')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                })
+                .then(data => {
+                    log('✅ API connection successful');
+                    log(`Game state: ${JSON.stringify(data, null, 2)}`);
+                    updateStatus('Connection to remote server successful', 'success');
+                })
+                .catch(error => {
+                    log(`❌ API connection failed: ${error.message}`);
+                    updateStatus('Connection to remote server failed', 'error');
+                });
+        };
+        
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+        };
+        
+        // Initialize
+        log('🚀 Remote connection test initialized');
+        log('Available commands:');
+        log('  - testEnvironment() - Check environment configuration');
+        log('  - testConnection() - Test API connection');
+        log('  - clearLog() - Clear the log');
+    </script>
+</body>
+</html> 

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Lobby Count Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .player-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .ready { border-left: 4px solid #28a745; }
+        .not-ready { border-left: 4px solid #dc3545; }
+        .disconnected { border-left: 4px solid #ffc107; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Lobby Count Update</h1>
+        <p>This test verifies that the lobby count updates correctly when a player leaves the game.</p>
+
+        <div class="test-section">
+            <h3>Test Instructions</h3>
+            <ol>
+                <li>Open this page in multiple browser tabs/windows</li>
+                <li>Each tab will represent a different player</li>
+                <li>Click "Connect" on each tab to join the game</li>
+                <li>Click "Ready" on each tab to set players as ready</li>
+                <li>Close one of the tabs to simulate a player leaving</li>
+                <li>Check that the lobby count updates correctly on the remaining tabs</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>Connection Status</h3>
+            <div id="connectionStatus" class="status info">Disconnected</div>
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Lobby Status</h3>
+            <div id="lobbyStatus" class="status info">Not connected</div>
+            <button id="readyBtn" onclick="setReady()" disabled>Set Ready</button>
+            <button id="notReadyBtn" onclick="setNotReady()" disabled>Set Not Ready</button>
+            <button id="startGameBtn" onclick="startGame()" disabled>Start Game</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Players</h3>
+            <div id="playerList" class="player-list">
+                <div class="player-card">No players connected</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Log</h3>
+            <div id="log" class="log"></div>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        let gameState = null;
+        let myPlayerId = null;
+        let isConnected = false;
+
+        // Generate unique player data for this tab
+        const playerData = {
+            name: `Test Player ${Math.floor(Math.random() * 1000)}`,
+            avatarUrl: `https://gravatar.com/avatar/${Math.random().toString(36).substring(7)}?s=400&d=robohash&r=x`,
+            bank: 1000,
+            vk_user_id: Math.floor(Math.random() * 1000000)
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateConnectionStatus(status, type = 'info') {
+            const statusElement = document.getElementById('connectionStatus');
+            statusElement.textContent = status;
+            statusElement.className = `status ${type}`;
+        }
+
+        function updateLobbyStatus(status, type = 'info') {
+            const statusElement = document.getElementById('lobbyStatus');
+            statusElement.textContent = status;
+            statusElement.className = `status ${type}`;
+        }
+
+        function updatePlayerList() {
+            if (!gameState || !gameState.players) {
+                document.getElementById('playerList').innerHTML = '<div class="player-card">No players connected</div>';
+                return;
+            }
+
+            const playerListElement = document.getElementById('playerList');
+            playerListElement.innerHTML = '';
+
+            gameState.players.forEach(player => {
+                const playerCard = document.createElement('div');
+                playerCard.className = 'player-card';
+                
+                let statusClass = 'not-ready';
+                let statusText = 'Not Ready';
+                
+                if (player.ready) {
+                    statusClass = 'ready';
+                    statusText = 'Ready';
+                }
+                
+                if (player.disconnected) {
+                    statusClass = 'disconnected';
+                    statusText = 'Disconnected';
+                }
+
+                playerCard.innerHTML = `
+                    <strong>${player.name}</strong><br>
+                    Status: ${statusText}<br>
+                    Bank: $${player.bank}<br>
+                    ${player.id === myPlayerId ? '(You)' : ''}
+                `;
+                playerCard.classList.add(statusClass);
+                playerListElement.appendChild(playerCard);
+            });
+        }
+
+        function connect() {
+            log('Connecting to server...', 'info');
+            
+            socket = io('http://localhost:3000');
+            
+            socket.on('connect', () => {
+                isConnected = true;
+                updateConnectionStatus('Connected to server', 'success');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('readyBtn').disabled = false;
+                document.getElementById('notReadyBtn').disabled = false;
+                
+                log('Connected to server', 'success');
+                
+                // Join game
+                socket.emit('joinGame', playerData);
+            });
+
+            socket.on('disconnect', () => {
+                isConnected = false;
+                updateConnectionStatus('Disconnected from server', 'error');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                document.getElementById('readyBtn').disabled = true;
+                document.getElementById('notReadyBtn').disabled = true;
+                document.getElementById('startGameBtn').disabled = true;
+                
+                log('Disconnected from server', 'error');
+            });
+
+            socket.on('gameJoined', (data) => {
+                myPlayerId = data.playerId;
+                gameState = data.gameState;
+                
+                log(`Joined game as ${playerData.name} (ID: ${myPlayerId})`, 'success');
+                log(`Lobby status: ${gameState.readyCount}/${gameState.totalPlayers} ready`, 'info');
+                
+                updateLobbyStatus(`Lobby: ${gameState.readyCount}/${gameState.totalPlayers} ready`, 'info');
+                updatePlayerList();
+            });
+
+            socket.on('gameStateUpdate', (data) => {
+                gameState = data.gameState;
+                
+                if (data.readyUpdate) {
+                    const update = data.readyUpdate;
+                    log(`Ready status update: ${update.readyCount}/${update.totalPlayers} ready`, 'info');
+                    updateLobbyStatus(`Lobby: ${update.readyCount}/${update.totalPlayers} ready`, 'info');
+                }
+                
+                if (data.gameStarted) {
+                    log('Game started!', 'success');
+                    updateLobbyStatus('Game in progress', 'success');
+                    document.getElementById('startGameBtn').disabled = true;
+                }
+                
+                if (data.roomReset) {
+                    log('Room reset to lobby', 'warning');
+                    updateLobbyStatus(`Lobby: ${gameState.readyCount}/${gameState.totalPlayers} ready`, 'info');
+                    document.getElementById('startGameBtn').disabled = false;
+                }
+                
+                if (data.playerLeft) {
+                    log(`Player left: ${data.playerLeft.playerName}`, 'warning');
+                }
+                
+                if (data.playerDisconnected) {
+                    log('Player disconnected (may reconnect)', 'warning');
+                }
+                
+                updatePlayerList();
+                
+                // Update start game button
+                if (gameState.allPlayersReady && gameState.status === 'lobby') {
+                    document.getElementById('startGameBtn').disabled = false;
+                } else {
+                    document.getElementById('startGameBtn').disabled = true;
+                }
+            });
+
+            socket.on('playerJoined', (data) => {
+                log(`Player joined: ${data.player.name}`, 'info');
+            });
+
+            socket.on('playerLeft', (data) => {
+                log(`Player left: ${data.playerName}`, 'warning');
+            });
+
+            socket.on('playerDisconnected', (data) => {
+                log(`Player disconnected: ${data.playerName} (may reconnect)`, 'warning');
+            });
+
+            socket.on('error', (data) => {
+                log(`Error: ${data.message}`, 'error');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        function setReady() {
+            if (socket && isConnected) {
+                socket.emit('setReady', true);
+                log('Setting ready status', 'info');
+            }
+        }
+
+        function setNotReady() {
+            if (socket && isConnected) {
+                socket.emit('setReady', false);
+                log('Setting not ready status', 'info');
+            }
+        }
+
+        function startGame() {
+            if (socket && isConnected) {
+                socket.emit('startGame');
+                log('Requesting to start game', 'info');
+            }
+        }
+
+        // Auto-connect when page loads
+        window.addEventListener('load', () => {
+            log(`Test player: ${playerData.name}`, 'info');
+            log('Ready to test lobby count updates', 'info');
+        });
+
+        // Handle page unload (simulate player leaving)
+        window.addEventListener('beforeunload', () => {
+            if (socket && isConnected) {
+                log('Page closing - simulating player leaving', 'warning');
+                // Socket will automatically disconnect
+            }
+        });
+    </script>
+</body>
+</html> 

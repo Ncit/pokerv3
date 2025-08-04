@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bot Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #040218;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            width: 1280px;
+            height: 720px;
+            margin: 0 auto;
+            border: 2px solid #333;
+        }
+        .test-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>AI Bot Texas Hold'em Test</h1>
+        <p>This page tests the AI Bot scene functionality.</p>
+        <p>Check the browser console for debug information.</p>
+    </div>
+    
+    <div id="game-container"></div>
+    
+    <!-- Mock appData for testing -->
+    <script>
+        window.appData = {
+            first_name: 'Test Player',
+            userAvatar: 'https://gravatar.com/avatar/test?s=400&d=robohash&r=x',
+        };
+        window.isDebug = true;
+    </script>
+    
+    <script src="./dependencies/phaser.js"></script>
+    <script type="module" src="./client/src/main.js"></script>
+</body>
+</html> 

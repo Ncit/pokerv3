@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unique AI Bot Scenes Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .test-button.secondary {
+            background-color: #2196F3;
+        }
+        .test-button.secondary:hover {
+            background-color: #1976D2;
+        }
+        .test-button.danger {
+            background-color: #f44336;
+        }
+        .test-button.danger:hover {
+            background-color: #d32f2f;
+        }
+        .log-container {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .test-info {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status.error {
+            background-color: #f44336;
+            color: white;
+        }
+        .status.info {
+            background-color: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Unique AI Bot Scenes Test</h1>
+        
+        <div class="test-info">
+            <h3>Test Purpose:</h3>
+            <p>This test verifies that clicking the AI bot button creates unique scene instances without duplicate key errors.</p>
+            
+            <h3>Expected Behavior:</h3>
+            <ul>
+                <li>Each click creates a scene with unique key (AIBotScene_[timestamp])</li>
+                <li>No duplicate key errors</li>
+                <li>Each scene starts with fresh state</li>
+                <li>Menu button returns to lobby and cleans up</li>
+            </ul>
+            
+            <h3>Test Steps:</h3>
+            <ol>
+                <li>Click "Start AI Bot Game" multiple times</li>
+                <li>Check console for unique scene keys</li>
+                <li>Verify no duplicate key errors</li>
+                <li>Use menu button to return to lobby</li>
+                <li>Start new AI bot game again</li>
+            </ol>
+        </div>
+        
+        <div id="status" class="status info">Ready to test</div>
+        
+        <div>
+            <button class="test-button" onclick="startAIBotGame()">Start AI Bot Game</button>
+            <button class="test-button secondary" onclick="returnToLobby()">Return to Lobby</button>
+            <button class="test-button danger" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div class="log-container" id="logContainer">
+            <div>Test started. Click "Start AI Bot Game" to begin testing...</div>
+        </div>
+    </div>
+
+    <!-- Phaser CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    
+    <!-- Game Scripts -->
+    <script type="module">
+        // Mock appData for testing
+        window.appData = {
+            first_name: 'Test Player',
+            vk_user_id: 12345
+        };
+        
+        // Enable debug mode
+        window.isDebug = true;
+        
+        // Import game scenes and managers
+        import { LoadingScene } from './client/src/scenes/LoadingScene.js';
+        import { LobbyScene } from './client/src/scenes/LobbyScene.js';
+        import { AIBotScene } from './client/src/scenes/AIBotScene.js';
+        import { FastGameScene } from './client/src/scenes/FastGameScene.js';
+        import { FriendsGameScene } from './client/src/scenes/FriendsGameScene.js';
+        
+        // Game configuration
+        const config = {
+            type: Phaser.AUTO,
+            width: 1280,
+            height: 720,
+            parent: 'game-container',
+            scene: [LoadingScene, LobbyScene, AIBotScene, FastGameScene, FriendsGameScene],
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            }
+        };
+        
+        // Create game instance
+        const game = new Phaser.Game(config);
+        
+        // Track scene instances
+        let sceneCount = 0;
+        let activeScenes = new Set();
+        let hasErrors = false;
+        
+        // Global functions for testing
+        window.startAIBotGame = function() {
+            updateStatus('Starting new AI Bot Game...', 'info');
+            sceneCount++;
+            hasErrors = false;
+            addLog(`Starting AI Bot Game #${sceneCount}`);
+            game.scene.start('LobbyScene');
+        };
+        
+        window.returnToLobby = function() {
+            updateStatus('Returning to Lobby...', 'info');
+            addLog('Returning to Lobby');
+            game.scene.start('LobbyScene');
+        };
+        
+        window.clearLogs = function() {
+            document.getElementById('logContainer').innerHTML = '';
+            addLog('Logs cleared');
+        };
+        
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+        
+        function addLog(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('AIBotScene') || message.includes('scene')) {
+                addLog(message);
+            }
+        };
+        
+        // Override console.warn and console.error
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('AIBotScene') || message.includes('scene')) {
+                addLog('⚠️ ' + message);
+            }
+        };
+        
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const message = args.join(' ');
+            if (message.includes('AIBotScene') || message.includes('scene') || message.includes('duplicate')) {
+                addLog('❌ ' + message);
+                hasErrors = true;
+                updateStatus(`Error detected: ${message}`, 'error');
+            }
+        };
+        
+        // Monitor scene creation and destruction
+        const originalAdd = game.scene.add;
+        game.scene.add = function(key, scene, autoStart) {
+            addLog(`Creating new scene: ${key}`);
+            activeScenes.add(key);
+            return originalAdd.call(this, key, scene, autoStart);
+        };
+        
+        const originalRemove = game.scene.remove;
+        game.scene.remove = function(key) {
+            addLog(`Removing scene: ${key}`);
+            activeScenes.delete(key);
+            return originalRemove.call(this, key);
+        };
+        
+        const originalStart = game.scene.start;
+        game.scene.start = function(key) {
+            addLog(`Starting scene: ${key}`);
+            return originalStart.call(this, key);
+        };
+        
+        const originalStop = game.scene.stop;
+        game.scene.stop = function(key) {
+            addLog(`Stopping scene: ${key}`);
+            return originalStop.call(this, key);
+        };
+        
+        // Monitor for successful scene creation
+        let successCheck = setInterval(() => {
+            if (game.scene.isActive('LobbyScene')) {
+                setTimeout(() => {
+                    if (!hasErrors) {
+                        updateStatus('Lobby loaded successfully! No errors detected.', 'success');
+                    }
+                }, 1000);
+                clearInterval(successCheck);
+            }
+        }, 100);
+        
+        addLog('Test environment initialized');
+        addLog('Monitoring for unique scene creation...');
+        addLog(`Active scenes: ${Array.from(activeScenes).join(', ')}`);
+    </script>
+</body>
+</html> 

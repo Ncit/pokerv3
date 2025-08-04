@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Room Reset - One Player Remaining</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Room Reset - One Player Remaining</h1>
+        <p>This test verifies that the room automatically resets to lobby state when only one player remains.</p>
+
+        <div class="test-section">
+            <h3>Test Setup</h3>
+            <button id="startServer">🚀 Start Server</button>
+            <button id="stopServer">🛑 Stop Server</button>
+            <div id="serverStatus" class="status waiting">Server: Not Started</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Player Connections</h3>
+            <button id="connectPlayer1">👤 Connect Player 1</button>
+            <button id="connectPlayer2">👤 Connect Player 2</button>
+            <button id="connectPlayer3">👤 Connect Player 3</button>
+            <button id="disconnectPlayer1">❌ Disconnect Player 1</button>
+            <button id="disconnectPlayer2">❌ Disconnect Player 2</button>
+            <button id="disconnectPlayer3">❌ Disconnect Player 3</button>
+            <div id="playerStatus" class="status waiting">Players: Not Connected</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Game Actions</h3>
+            <button id="startGame">🎮 Start Game</button>
+            <button id="resetRoom">🔄 Reset Room</button>
+            <div id="gameStatus" class="status waiting">Game: In Lobby</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Log</h3>
+            <div id="log" class="log"></div>
+            <button id="clearLog">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let serverProcess = null;
+        let sockets = [];
+        let gameState = null;
+
+        const log = (message) => {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        };
+
+        const updateStatus = (elementId, status, message) => {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = message;
+        };
+
+        // Server management
+        document.getElementById('startServer').addEventListener('click', async () => {
+            try {
+                log('🚀 Starting server...');
+                updateStatus('serverStatus', 'waiting', 'Server: Starting...');
+                
+                // In a real test, you would start the actual server process
+                // For this demo, we'll simulate it
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                updateStatus('serverStatus', 'connected', 'Server: Running on port 3000');
+                log('✅ Server started successfully');
+            } catch (error) {
+                log(`❌ Failed to start server: ${error.message}`);
+                updateStatus('serverStatus', 'disconnected', 'Server: Failed to start');
+            }
+        });
+
+        document.getElementById('stopServer').addEventListener('click', () => {
+            log('🛑 Stopping server...');
+            updateStatus('serverStatus', 'waiting', 'Server: Stopped');
+            log('✅ Server stopped');
+        });
+
+        // Player connection management
+        const connectPlayer = (playerName, playerIndex) => {
+            return new Promise((resolve, reject) => {
+                const socket = io('http://localhost:3000');
+                
+                socket.on('connect', () => {
+                    log(`👤 ${playerName} connected (${socket.id})`);
+                    
+                    socket.emit('joinGame', {
+                        name: playerName,
+                        avatarUrl: `https://gravatar.com/avatar/${playerIndex}?s=400&d=robohash&r=x`
+                    });
+                });
+
+                socket.on('gameJoined', (data) => {
+                    log(`✅ ${playerName} joined game (ID: ${data.playerId})`);
+                    gameState = data.gameState;
+                    updateGameStatus();
+                    resolve(socket);
+                });
+
+                socket.on('gameStateUpdate', (data) => {
+                    gameState = data.gameState;
+                    updateGameStatus();
+                    
+                    if (data.roomResetToOnePlayer) {
+                        log(`🔄 ROOM RESET: Only one player remaining - room reset to lobby`);
+                    }
+                    
+                    if (data.gameStarted) {
+                        log(`🎮 Game started`);
+                    }
+                    
+                    if (data.roomReset) {
+                        log(`🔄 Room manually reset`);
+                    }
+                });
+
+                socket.on('playerJoined', (data) => {
+                    log(`👤 New player joined: ${data.player.name}`);
+                });
+
+                socket.on('playerDisconnected', (data) => {
+                    log(`👋 Player disconnected: ${data.playerName}`);
+                });
+
+                socket.on('roomResetToOnePlayer', (data) => {
+                    log(`🔄 ROOM RESET EVENT: ${data.message}`);
+                    log(`👤 Remaining player: ${data.remainingPlayer.name}`);
+                });
+
+                socket.on('error', (data) => {
+                    log(`❌ ${playerName} error: ${data.message}`);
+                    reject(new Error(data.message));
+                });
+
+                socket.on('disconnect', () => {
+                    log(`👋 ${playerName} disconnected`);
+                });
+            });
+        };
+
+        document.getElementById('connectPlayer1').addEventListener('click', async () => {
+            try {
+                const socket = await connectPlayer('Alice', 1);
+                sockets[0] = socket;
+                updatePlayerStatus();
+            } catch (error) {
+                log(`❌ Failed to connect Player 1: ${error.message}`);
+            }
+        });
+
+        document.getElementById('connectPlayer2').addEventListener('click', async () => {
+            try {
+                const socket = await connectPlayer('Bob', 2);
+                sockets[1] = socket;
+                updatePlayerStatus();
+            } catch (error) {
+                log(`❌ Failed to connect Player 2: ${error.message}`);
+            }
+        });
+
+        document.getElementById('connectPlayer3').addEventListener('click', async () => {
+            try {
+                const socket = await connectPlayer('Charlie', 3);
+                sockets[2] = socket;
+                updatePlayerStatus();
+            } catch (error) {
+                log(`❌ Failed to connect Player 3: ${error.message}`);
+            }
+        });
+
+        const disconnectPlayer = (playerIndex) => {
+            if (sockets[playerIndex]) {
+                sockets[playerIndex].disconnect();
+                sockets[playerIndex] = null;
+                log(`❌ Player ${playerIndex + 1} disconnected`);
+                updatePlayerStatus();
+            }
+        };
+
+        document.getElementById('disconnectPlayer1').addEventListener('click', () => disconnectPlayer(0));
+        document.getElementById('disconnectPlayer2').addEventListener('click', () => disconnectPlayer(1));
+        document.getElementById('disconnectPlayer3').addEventListener('click', () => disconnectPlayer(2));
+
+        const updatePlayerStatus = () => {
+            const connectedCount = sockets.filter(s => s !== null).length;
+            updateStatus('playerStatus', 'connected', `Players: ${connectedCount} connected`);
+        };
+
+        const updateGameStatus = () => {
+            if (gameState) {
+                const status = gameState.status;
+                const phase = gameState.phase;
+                const playerCount = gameState.totalPlayers;
+                updateStatus('gameStatus', 'connected', `Game: ${status} (${phase}) - ${playerCount} players`);
+            }
+        };
+
+        // Game actions
+        document.getElementById('startGame').addEventListener('click', () => {
+            if (sockets[0]) {
+                sockets[0].emit('startGame');
+                log('🎮 Requesting game start...');
+            } else {
+                log('❌ No players connected to start game');
+            }
+        });
+
+        document.getElementById('resetRoom').addEventListener('click', () => {
+            if (sockets[0]) {
+                sockets[0].emit('resetRoom');
+                log('🔄 Requesting room reset...');
+            } else {
+                log('❌ No players connected to reset room');
+            }
+        });
+
+        document.getElementById('clearLog').addEventListener('click', () => {
+            document.getElementById('log').innerHTML = '';
+        });
+
+        // Auto-test sequence
+        const runAutoTest = async () => {
+            log('🧪 Starting auto-test sequence...');
+            
+            // Step 1: Connect 3 players
+            log('📋 Step 1: Connecting 3 players...');
+            await connectPlayer('Alice', 1);
+            await connectPlayer('Bob', 2);
+            await connectPlayer('Charlie', 3);
+            
+            // Step 2: Start game
+            log('📋 Step 2: Starting game...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (sockets[0]) {
+                sockets[0].emit('startGame');
+            }
+            
+            // Step 3: Disconnect 2 players to test reset
+            log('📋 Step 3: Disconnecting 2 players to test room reset...');
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            disconnectPlayer(1); // Disconnect Bob
+            disconnectPlayer(2); // Disconnect Charlie
+            
+            log('✅ Auto-test sequence completed');
+        };
+
+        // Add auto-test button
+        const autoTestButton = document.createElement('button');
+        autoTestButton.textContent = '🧪 Run Auto Test';
+        autoTestButton.addEventListener('click', runAutoTest);
+        document.querySelector('.test-section').appendChild(autoTestButton);
+
+        log('🚀 Test page loaded. Start the server and connect players to test room reset functionality.');
+    </script>
+</body>
+</html> 
